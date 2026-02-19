@@ -17,8 +17,6 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-var jwtSecret = ""
-
 func (cfg *Config) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -39,7 +37,7 @@ func (cfg *Config) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	accessToken, err := auth.MakeJWT(
 		user.ID,
-		jwtSecret,
+		cfg.JWTSecret,
 		15*time.Minute,
 	)
 	if err != nil {

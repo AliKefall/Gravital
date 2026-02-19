@@ -6,6 +6,7 @@ import (
 )
 
 type Config struct {
-	DB     *db.Queries
-	Hasher *auth.PasswordHasher
+	DB        *db.Queries
+	Hasher    *auth.PasswordHasher
+	JWTSecret string
 }
