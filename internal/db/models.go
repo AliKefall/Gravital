@@ -9,10 +9,10 @@ import (
 )
 
 type RefreshToken struct {
-	Token     string
+	ID        string
 	UserID    string
+	TokenHash string
 	CreatedAt string
-	UpdatedAt string
 	ExpiresAt string
 	RevokedAt sql.NullString
 }

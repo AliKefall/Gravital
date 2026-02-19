@@ -14,3 +14,5 @@ WHERE id=?;
 -- name: GetUserByEmail :one
 SELECT * FROM users
 where email=?;
+
+

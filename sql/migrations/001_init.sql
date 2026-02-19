@@ -7,12 +7,11 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TEXT NOT NULL
 );
 
-
-CREATE TABLE IF NOT EXISTS refresh_tokens (
-    token TEXT PRIMARY KEY,
+CREATE TABLE refresh_tokens (
+    id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
     created_at TEXT NOT NULL,
-    updated_at TEXT NOT NULL,
     expires_at TEXT NOT NULL,
     revoked_at TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
