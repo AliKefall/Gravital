@@ -17,37 +17,35 @@ type LoginRequest struct {
 	Password string `json:"password"`
 }
 
-func (cfg *Config) LoginHandler(w http.ResponseWriter, r *http.Request) {
+func (app *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
+
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		RespondWithError(w, http.StatusBadRequest, "Request body cannot be decoded.", err)
 		return
 	}
 
-	user, err := cfg.DB.GetUserByEmail(r.Context(), req.Email)
+	user, err := app.App.DB.GetUserByEmail(r.Context(), req.Email)
 	if err != nil {
-		RespondWithError(w, http.StatusNotFound, "There is no such user registered.", err)
+		RespondWithError(w, http.StatusUnauthorized, "Invalid credentials", err)
 		return
 	}
 
-	isEqual, err := cfg.Hasher.Verify(req.Password, user.Password)
+	isEqual, err := app.App.Hasher.Verify(req.Password, user.Password)
 	if err != nil || !isEqual {
-		RespondWithError(w, http.StatusConflict, "Email or password is not correct.", err)
+		RespondWithError(w, http.StatusUnauthorized, "Invalid credentials.", err)
 		return
 	}
-	accessToken, err := auth.MakeJWT(
-		user.ID,
-		cfg.JWTSecret,
-		15*time.Minute,
-	)
+
+	accessToken, err := app.App.JWT.Generate(user.ID)
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, "Could not create access token", err)
+		RespondWithError(w, http.StatusInternalServerError, "Could not create JWT token", err)
 		return
 	}
 
 	refreshToken, err := auth.MakeRefreshToken()
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, "Could not create refresh token", err)
+		RespondWithError(w, http.StatusUnauthorized, "Could not create refresh token", err)
 		return
 	}
 
@@ -57,16 +55,15 @@ func (cfg *Config) LoginHandler(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().UTC()
 	expiresAt := now.Add(7 * 24 * time.Hour)
 
-	_, err = cfg.DB.CreateRefreshToken(r.Context(), db.CreateRefreshTokenParams{
+	_, err = app.App.DB.CreateRefreshToken(r.Context(), db.CreateRefreshTokenParams{
 		ID:        uuid.New().String(),
 		UserID:    user.ID,
 		TokenHash: refreshHash,
 		CreatedAt: now.Format(time.RFC3339),
 		ExpiresAt: expiresAt.Format(time.RFC3339),
 	})
-
 	if err != nil {
-		RespondWithError(w, http.StatusInternalServerError, "Cound not store refresh token", err)
+		RespondWithError(w, http.StatusInternalServerError, "Could not store refresh token", err)
 		return
 	}
 

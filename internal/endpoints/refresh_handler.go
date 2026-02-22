@@ -12,7 +12,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func (cfg *Config) RefreshHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	cookie, err := r.Cookie("refresh_token")
@@ -21,12 +21,13 @@ func (cfg *Config) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Hash incoming refresh token
 	hash := sha256.Sum256([]byte(cookie.Value))
 	refreshHash := hex.EncodeToString(hash[:])
 
 	now := time.Now().UTC()
 
-	tokenRecord, err := cfg.DB.GetValidRefreshToken(ctx, db.GetValidRefreshTokenParams{
+	tokenRecord, err := h.App.DB.GetValidRefreshToken(ctx, db.GetValidRefreshTokenParams{
 		TokenHash: refreshHash,
 		ExpiresAt: now.Format(time.RFC3339),
 	})
@@ -35,19 +36,20 @@ func (cfg *Config) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = cfg.DB.RevokeRefreshToken(ctx, db.RevokeRefreshTokenParams{
+	// Revoke old token (rotation)
+	err = h.App.DB.RevokeRefreshToken(ctx, db.RevokeRefreshTokenParams{
 		RevokedAt: sql.NullString{
 			Valid:  true,
 			String: now.Format(time.RFC3339),
 		},
 		TokenHash: refreshHash,
 	})
-
 	if err != nil {
-		RespondWithError(w, http.StatusUnauthorized, "Could not revoke refresh token", err)
+		RespondWithError(w, http.StatusInternalServerError, "Could not revoke refresh token", err)
 		return
 	}
 
+	// Generate new refresh token
 	newRefresh, err := auth.MakeRefreshToken()
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, "Could not create refresh token", err)
@@ -59,7 +61,7 @@ func (cfg *Config) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 
 	newExpires := now.Add(7 * 24 * time.Hour)
 
-	_, err = cfg.DB.CreateRefreshToken(ctx, db.CreateRefreshTokenParams{
+	_, err = h.App.DB.CreateRefreshToken(ctx, db.CreateRefreshTokenParams{
 		ID:        uuid.New().String(),
 		UserID:    tokenRecord.UserID,
 		TokenHash: newHash,
@@ -71,12 +73,8 @@ func (cfg *Config) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newAccess, err := auth.MakeJWT(
-		tokenRecord.UserID,
-		cfg.JWTSecret,
-		15*time.Minute,
-	)
-
+	// Use JWT manager instead of direct MakeJWT
+	newAccess, err := h.App.JWT.Generate(tokenRecord.UserID)
 	if err != nil {
 		RespondWithError(w, http.StatusInternalServerError, "Could not create new access token", err)
 		return
@@ -95,5 +93,4 @@ func (cfg *Config) RefreshHandler(w http.ResponseWriter, r *http.Request) {
 	RespondWithJson(w, http.StatusOK, map[string]string{
 		"access_token": newAccess,
 	})
-
 }
