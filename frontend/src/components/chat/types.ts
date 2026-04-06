@@ -1,0 +1,115 @@
+
+export interface ChatWorkspaceProps {
+    username: string
+    token: string
+    onLogout: () => void
+}
+
+export interface ChatMessage {
+    type: string
+    room_id?: string
+    from?: string
+    content?: string
+    to?: string
+    timestamp?: string
+    kind?: string
+    media_url?: string
+    mime_type?: string
+    file_name?: string
+    file_size?: number
+    mic_muted?: boolean
+    output_muted?: boolean
+
+    fps?: number
+    latency_ms?: number
+    bitrate_kbps?: number
+    packet_loss_pct?: number
+    jitter_ms?: number
+    available_outgoing_kbps?: number
+    width?: number
+    height?: number
+    network_status?: "good" | "medium" | "poor"
+    sdp?: string
+    candidate?: string
+    sdp_mid?: string
+    sdp_mline_index?: number
+    online?: boolean
+}
+
+export type OutgoingPayload = Record<string, string | number | boolean>
+
+export interface RoomsPayload {
+    room_id: string
+    type: "rooms"
+    rooms: string[]
+}
+
+export interface HistoryPayload {
+    type: "history"
+    room_id: string
+    messages: ChatMessage[]
+}
+
+export interface RoomMetaPayload {
+    type: "room_meta"
+    room_id: string
+    owner_username: string
+    active_users: string[]
+}
+
+export interface RoomScreenStatePayload {
+    type: "screen_share_state"
+    room_id: string
+    active_users: string[]
+}
+
+export interface PresencePayload {
+    type: "presence"
+    from: string
+    online: boolean
+    timestamp: string
+}
+
+export interface SocialEventPayload {
+    type: "social_event"
+    from: string
+    content: "friend_request_updated" | "friend_list_updated" | "room_membership_updated" | string
+    timestamp: string
+}
+
+export interface Friend {
+    username: string
+    online?: boolean
+}
+
+export interface RemoteAudio {
+    username: string
+    stream: MediaStream
+}
+
+export interface RemoteScreen {
+    username: string
+    stream: MediaStream
+}
+
+export interface StreamStats {
+    username: string
+    roomId: string
+    fps: number
+    latencyMs: number
+    bitrateKbps: number
+    packetLossPct: number
+    jitterMs: number
+    availableOutgoingKbps: number
+    width: number
+    height: number
+    networkQuality: "good" | "medium" | "poor"
+    timestamp: string
+}
+
+export interface RoomMeta {
+    owner: string
+    activeUsers: string[]
+}
+
+export type ConnectionStatus = "connecting" | "online" | "reconnecting" | "offline"

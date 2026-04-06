@@ -1,0 +1,8 @@
+# Zorunlu degiskenler
+DATABASE_URL=libsql://your-db.turso.io
+DB_AUTH_TOKEN=your-db-auth-token
+JWT_SECRET=replace-with-strong-secret
+
+# Opsiyonel degiskenler
+PORT=8080
+CORS_ALLOWED_ORIGINS=https://gravitall.today,https://www.gravitall.today
