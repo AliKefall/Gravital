@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/AliKefall/Gravital/internal/db"
+	"github.com/AliKefall/Gravital/internal/observability"
 )
 
 // NOTE: For now rooms don't have any limitations about size, this is only for testing you can simply assign it as however you wish.
@@ -28,6 +29,7 @@ type Hub struct {
 	Register       chan *Client
 	Unregister     chan *Client
 	PresenceEvents chan PresenceEvent
+	Metrics        *observability.PrometheusMetrics
 	mu             sync.RWMutex
 }
 
@@ -90,6 +92,7 @@ func (h *Hub) Run() {
 				h.Users[client.Username][client] = true
 			}
 			h.mu.Unlock()
+			h.Metrics.IncWSActiveConnections()
 			if becameOnline {
 				h.publishPresence(client.Username, true)
 			}
@@ -130,6 +133,7 @@ func (h *Hub) Run() {
 			}
 			close(client.Send)
 			h.mu.Unlock()
+			h.Metrics.DecWSActiveConnections()
 			if becameOffline {
 				h.publishPresence(client.Username, false)
 			}
@@ -159,6 +163,7 @@ func (h *Hub) publishPresence(username string, isOnline bool) {
 }
 
 func (h *Hub) HandleMessage(sender *Client, msg Message) {
+	h.Metrics.ObserveWSMessage("inbound", string(msg.Type))
 	switch msg.Type {
 	case TypeJoinRoom:
 		h.joinRoom(sender, msg.RoomID)
@@ -567,6 +572,8 @@ func (h *Hub) sendToRoom(sender *Client, roomID string, msg Message) {
 
 	data, _ := json.Marshal(msg)
 
+	h.Metrics.ObserveWSMessage("outbound", string(msg.Type))
+
 	for _, client := range recipients {
 		select {
 		case client.Send <- data:
@@ -772,6 +779,7 @@ func (h *Hub) updateScreenShareState(roomID, username string, isSharing bool) {
 
 // I'll transport this into admin site when I do write one, for now this stays here.
 func (h *Hub) sendSystem(client *Client, roomID, content string) {
+	h.Metrics.ObserveWSMessage("outbound", string(TypeSystem))
 	if client == nil {
 		return
 	}
@@ -790,6 +798,7 @@ func (h *Hub) sendSystem(client *Client, roomID, content string) {
 }
 
 func (h *Hub) sendDirect(username string, msg Message) {
+	h.Metrics.ObserveWSMessage("outbound", string(msg.Type))
 	h.mu.RLock()
 	connections, ok := h.Users[username]
 	recipients := make([]*Client, 0, len(connections))
@@ -831,6 +840,7 @@ func (h *Hub) PublishSocialEvent(usernames []string, content string) {
 }
 
 func (h *Hub) broadcastPresence(username string, isOnline bool, timestamp string) {
+	h.Metrics.ObserveWSMessage("outbound", string(TypePresence))
 	if strings.TrimSpace(username) == "" {
 		return
 	}

@@ -15,6 +15,7 @@ type App struct {
 	Hub             *websocket.Hub
 	Metrics         *observability.Metrics
 	FriendListCache *cache.FriendListCache
+	Prometheus      *observability.PrometheusMetrics
 }
 
 func New(db *db.Queries, hasher *auth.PasswordHasher, jwtManager *auth.JWTManager, hub *websocket.Hub) *App {

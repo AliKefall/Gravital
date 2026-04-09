@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func buildRouter(config *ServerConfig, deps *serverDependencies) chi.Router {
@@ -24,7 +25,7 @@ func buildRouter(config *ServerConfig, deps *serverDependencies) chi.Router {
 		MaxAge:           300,
 	}))
 	r.Use(middlewares.RequestID)
-	r.Use(middlewares.LoggerWithMetrics(deps.application.Metrics))
+	r.Use(middlewares.LoggerWithMetrics(deps.application.Metrics, deps.application.Prometheus))
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(securityHeadersMiddleware)
@@ -35,7 +36,7 @@ func buildRouter(config *ServerConfig, deps *serverDependencies) chi.Router {
 	})
 
 	registerUploadsRoute(r)
-	r.Get("/metrics", deps.handler.MetricsHandler)
+	r.Handle("/metrics", promhttp.Handler())
 	registerAuthRoutes(r, deps)
 	registerWebsocketRoute(r, deps)
 

@@ -27,13 +27,16 @@ func bootstrapServer(config *ServerConfig) (*sql.DB, *serverDependencies) {
 	conn := mustOpenDatabase(config)
 	queries := db.New(conn)
 
-	hub := newHub(queries)
+	promMetrics := observability.NewPrometheusMetrics()
+	hub := newHub(queries, promMetrics)
+
 	application := &app.App{
 		DB:              queries,
 		Hasher:          auth.NewPasswordHasher(),
 		JWT:             auth.NewJWTManager(config.JWTSecret, 15*time.Minute),
 		Hub:             hub,
 		Metrics:         observability.NewMetrics(),
+		Prometheus:      promMetrics,
 		FriendListCache: cache.NewFriendListCache(45 * time.Second),
 	}
 
@@ -45,8 +48,9 @@ func bootstrapServer(config *ServerConfig) (*sql.DB, *serverDependencies) {
 	}
 }
 
-func newHub(queries *db.Queries) *websocket.Hub {
+func newHub(queries *db.Queries, promMetrics *observability.PrometheusMetrics) *websocket.Hub {
 	hub := websocket.NewHub()
+	hub.Metrics = promMetrics
 	hub.Queries = queries
 	go hub.Run()
 
@@ -101,4 +105,3 @@ func mustOpenDatabase(config *ServerConfig) *sql.DB {
 
 	return conn
 }
-

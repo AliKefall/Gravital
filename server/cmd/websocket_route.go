@@ -16,17 +16,19 @@ func registerWebsocketRoute(r chi.Router, deps *serverDependencies) {
 	r.Get("/ws", func(w http.ResponseWriter, r *http.Request) {
 		token := extractAccessToken(r)
 		if token == "" {
+			deps.application.Prometheus.ObserveWSConnectionAttempt("missing_token")
 			http.Error(w, "missing token", http.StatusUnauthorized)
 			return
 		}
 
 		claims, err := deps.application.JWT.Verify(token)
 		if err != nil {
+			deps.application.Prometheus.ObserveWSConnectionAttempt("invalid_token")
 			http.Error(w, "invalid token", http.StatusUnauthorized)
 			return
 		}
 
-		websocket.ServeWS(deps.hub, w, r, claims.Subject, claims.Username, func(client *websocket.Client) {
+		websocket.ServeWS(deps.hub, deps.application.Prometheus, w, r, claims.Subject, claims.Username, func(client *websocket.Client) {
 			rehydrateClientState(context.Background(), deps, client, claims.Subject)
 		})
 	})
