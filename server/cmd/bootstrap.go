@@ -101,3 +101,4 @@ func mustOpenDatabase(config *ServerConfig) *sql.DB {
 
 	return conn
 }
+
