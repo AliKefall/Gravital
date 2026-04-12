@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type RefObject } from "react"
 import { MessageContent } from "./MessageContent"
 import type { ChatMessage, RemoteAudio, RemoteScreen, RoomMeta, StreamStats } from "./types"
+import type { ConnectionDiagnostics } from "./webrtc/connectionDiagnostics"
 
 interface WorkspaceChatPanelProps {
   status: "connecting" | "online" | "reconnecting" | "offline"
@@ -22,6 +23,7 @@ interface WorkspaceChatPanelProps {
   remoteAudios: RemoteAudio[]
   selectedScreenUser: string | null
   streamStatsByUser: Record<string, StreamStats>
+  connectionDiagnosticsByUser: Record<string, ConnectionDiagnostics>
   isJoiningVoice: boolean
   visibleMessages: ChatMessage[]
   activeRoomMeta?: RoomMeta
@@ -72,6 +74,7 @@ export const WorkspaceChatPanel = ({
   selectedScreenUser,
   streamStatsByUser,
   isJoiningVoice,
+  connectionDiagnosticsByUser,
   onMessageTextChange,
   onSendMessage,
   onToggleVoice,
@@ -292,6 +295,44 @@ export const WorkspaceChatPanel = ({
                 </article>
               ))}
             </div>
+            <section className="stream-metrics-panel">
+              <h4>Bağlantı rotası izleme (UDP/TURN/P2P)</h4>
+              <p>Her peer için aktif ICE rotası, protokol (UDP/TCP/TLS) ve relay durumu.</p>
+              {Object.entries(connectionDiagnosticsByUser).length === 0 ? (
+                <p>Henüz bağlantı teşhisi yok. Ses kanalına katılıp bir kullanıcı ile eşleşmeyi bekleyin.</p>
+              ) : (
+                <div className="stream-metrics-table-wrap">
+                  <table className="stream-metrics-table">
+                    <thead>
+                      <tr>
+                        <th>Kullanıcı</th>
+                        <th>Rota</th>
+                        <th>Protokol</th>
+                        <th>ICE</th>
+                        <th>RTT</th>
+                        <th>UpLink</th>
+                        <th>Lokal Aday</th>
+                        <th>Uzak Aday</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Object.entries(connectionDiagnosticsByUser).map(([username, diagnostics]) => (
+                        <tr key={`conn-diag-${username}`}>
+                          <td>@{username}</td>
+                          <td>{diagnostics.route}</td>
+                          <td>{diagnostics.protocol}</td>
+                          <td>{diagnostics.iceState}</td>
+                          <td>{diagnostics.rttMs} ms</td>
+                          <td>{diagnostics.availableOutgoingKbps.toFixed(0)} kbps</td>
+                          <td>{diagnostics.localCandidate ? `${diagnostics.localCandidate.candidateType}/${diagnostics.localCandidate.protocol}` : "-"}</td>
+                          <td>{diagnostics.remoteCandidate ? `${diagnostics.remoteCandidate.candidateType}/${diagnostics.remoteCandidate.protocol}` : "-"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
             <section className="stream-metrics-panel">
               <h4>Canlı yayın metrikleri</h4>
               <p>Webcam/screen aktarımında gecikme ve bağlantı kalitesini takip edin.</p>

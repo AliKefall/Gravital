@@ -13,12 +13,12 @@ export const VIDEO_PROFILE_SETTINGS: Record<VideoMode, Record<NetworkProfile, Vi
     camera: {
         good: { maxBitrate: 1_800_000, maxFramerate: 30, scaleResolutionDownBy: 1, degradationPreference: "balanced" },
         medium: { maxBitrate: 1_100_000, maxFramerate: 24, scaleResolutionDownBy: 1.15, degradationPreference: "balanced" },
-        poor: { maxBitrate: 650_000, maxFramerate: 18, scaleResolutionDownBy: 1.4, degradationPreference: "maintain-framerate" },
+        poor: { maxBitrate: 280_000, maxFramerate: 12, scaleResolutionDownBy: 1.8, degradationPreference: "maintain-framerate" },
     },
     screen: {
         good: { maxBitrate: 2_500_000, maxFramerate: 30, scaleResolutionDownBy: 1, degradationPreference: "maintain-resolution" },
         medium: { maxBitrate: 1_600_000, maxFramerate: 24, scaleResolutionDownBy: 1.25, degradationPreference: "balanced" },
-        poor: { maxBitrate: 900_000, maxFramerate: 15, scaleResolutionDownBy: 1.75, degradationPreference: "maintain-framerate" },
+        poor: { maxBitrate: 360_000, maxFramerate: 18, scaleResolutionDownBy: 2, degradationPreference: "maintain-framerate" },
     },
 }
 

@@ -49,6 +49,7 @@ export const ChatWorkspace = (props: ChatWorkspaceProps) => {
         noiseGateDb={state.noiseGateDb}
         screenSharing={state.screenSharing}
         cameraSharing={state.cameraSharing}
+        connectionDiagnosticsByUser={state.connectionDiagnosticsByUser}
         remoteScreens={state.remoteScreens}
         localPreviewScreen={state.localPreviewScreen}
         remoteAudios={state.remoteAudios}

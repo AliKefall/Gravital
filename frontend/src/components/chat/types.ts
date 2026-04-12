@@ -36,6 +36,29 @@ export interface ChatMessage {
     online?: boolean
 }
 
+export interface ConnectionDiagnostics {
+    route: "p2p" | "turn-relay" | "unknown"
+    protocol: "udp" | "tcp" | "tls" | "unknown"
+    iceState: RTCIceConnectionState
+    connectionState: RTCPeerConnectionState
+    rttMs: number
+    availableOutgoingKbps: number
+    localCandidate: {
+        candidateType: string
+        protocol: "udp" | "tcp" | "tls" | "unknown"
+        address: string
+        port: number
+        networkType: string
+    } | null
+    remoteCandidate: {
+        candidateType: string
+        protocol: "udp" | "tcp" | "tls" | "unknown"
+        address: string
+        port: number
+        networkType: string
+    } | null
+    lastUpdatedAt: string
+}
 export type OutgoingPayload = Record<string, string | number | boolean>
 
 export interface RoomsPayload {

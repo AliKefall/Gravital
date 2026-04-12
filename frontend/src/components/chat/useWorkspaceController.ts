@@ -19,9 +19,11 @@ import type {
     RoomsPayload,
     RoomScreenStatePayload,
     StreamStats,
+    ConnectionDiagnostics,
 } from "./types"
 import { NETWORK_PROFILE_ORDER, VIDEO_PROFILE_SETTINGS, type NetworkProfile, type VideoMode } from "./webrtc/videoProfiles"
 import { AUDIO_CONSTRAINTS, CAMERA_SHARE_CONSTRAINTS, SCREEN_SHARE_CONSTRAINTS, VIDEO_TRACK_HINT } from "./webrtc/mediaConstraints"
+import { extractDiagnosticsFromRtcStats } from "./webrtc/connectionDiagnostics"
 
 export const useWorkspaceController = ({ username, token, onLogout }: ChatWorkspaceProps) => {
     const wsRef = useRef<WebSocket | null>(null)
@@ -77,6 +79,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const voiceConnectedRef = useRef(voiceConnected)
     const currentMessageContextRef = useRef({ activeRoom: "", activeDirectFriend: "" })
     const peerProfileStabilityRef = useRef<Map<string, { candidate: NetworkProfile, hits: number }>>(new Map())
+    const [connectionDiagnosticsByUser, setConnectionDiagnosticsByUser] = useState<Record<string, ConnectionDiagnostics>>({})
+
     useEffect(() => {
         voiceConnectedRef.current = voiceConnected
     }, [voiceConnected])
@@ -110,6 +114,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setRemoteAudios([])
         setRemoteScreens([])
         setLocalPreviewScreen(null)
+        setConnectionDiagnosticsByUser({})
         setStreamStatsByUser({})
         outboundBitrateWindowRef.current.clear()
         peerNetworkProfileRef.current.clear()
@@ -192,6 +197,12 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 const profile = quality
                 adaptVideoSenderForNetwork(peer, remoteUser, profile)
             }).catch(() => undefined)
+
+            peer.getStats().then((stats) => {
+                const diagnostics = extractDiagnosticsFromRtcStats(stats, peer)
+                setConnectionDiagnosticsByUser((prev) => ({ ...prev, [remoteUser]: diagnostics }))
+            }).catch(() => undefined)
+
         })
     }
 
@@ -220,9 +231,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 parameters.encodings[0].maxFramerate = videoProfile.maxFramerate
                 parameters.encodings[0].scaleResolutionDownBy = videoProfile.scaleResolutionDownBy
                 parameters.degradationPreference = videoProfile.degradationPreference
-                parameters.encodings[0].priority = profile === "poor" ? "high" : "medium"
+                parameters.encodings[0].priority = profile === "poor" ? "very-low" : "medium"
             } else {
-                parameters.encodings[0].maxBitrate = profile === "poor" ? 56_000 : 112_000
+                parameters.encodings[0].maxBitrate = profile === "poor" ? 56_000 : 128_000
+                parameters.encodings[0].priority = "high"
             }
             void sender.setParameters(parameters).catch(() => undefined)
         }
@@ -566,6 +578,12 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                             removeRemoteAudio(payload.from)
                             removeRemoteScreen(payload.from)
                             setStreamStatsByUser((prev) => {
+                                const next = { ...prev }
+                                delete next[payload.from as string]
+                                return next
+                            })
+
+                            setConnectionDiagnosticsByUser((prev) => {
                                 const next = { ...prev }
                                 delete next[payload.from as string]
                                 return next
@@ -1205,6 +1223,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             noiseGateDb,
             selectedScreenUser,
             streamStatsByUser,
+            connectionDiagnosticsByUser,
             isJoiningVoice,
             remoteAudios,
             visibleMessages,
