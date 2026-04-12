@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
 import { logoutUser } from "../../api/auth"
 import { acceptFriendRequest, addFriend, fetchFriendRequests, fetchFriends, rejectFriendRequest } from "../../api/friends"
-import { API_BASE_URL, WEBRTC_CONFIGURATION, WS_BASE_URL, buildAddFriendToRoomPayload } from "./constants"
+import { API_BASE_URL, WEBRTC_CONFIGURATION, WEBRTC_RELAY_CONFIGURATION, WS_BASE_URL, buildAddFriendToRoomPayload, hasTurnServer } from "./constants"
 import type {
     ChatMessage,
     ChatWorkspaceProps,
@@ -20,22 +20,10 @@ import type {
     RoomScreenStatePayload,
     StreamStats,
 } from "./types"
+import { NETWORK_PROFILE_ORDER, VIDEO_PROFILE_SETTINGS, type NetworkProfile, type VideoMode } from "./webrtc/videoProfiles"
+import { AUDIO_CONSTRAINTS, CAMERA_SHARE_CONSTRAINTS, SCREEN_SHARE_CONSTRAINTS, VIDEO_TRACK_HINT } from "./webrtc/mediaConstraints"
 
 export const useWorkspaceController = ({ username, token, onLogout }: ChatWorkspaceProps) => {
-    type NetworkProfile = "good" | "medium" | "poor"
-    type VideoMode = "screen" | "camera"
-    const VIDEO_PROFILE_SETTINGS: Record<VideoMode, Record<NetworkProfile, { maxBitrate: number, maxFramerate: number, scaleResolutionDownBy: number, degradationPreference: RTCDegradationPreference }>> = {
-        camera: {
-            good: { maxBitrate: 1_250_000, maxFramerate: 30, scaleResolutionDownBy: 1, degradationPreference: "balanced" },
-            medium: { maxBitrate: 850_000, maxFramerate: 24, scaleResolutionDownBy: 1.2, degradationPreference: "maintain-resolution" },
-            poor: { maxBitrate: 500_000, maxFramerate: 15, scaleResolutionDownBy: 1.5, degradationPreference: "maintain-resolution" },
-        },
-        screen: {
-            good: { maxBitrate: 1_800_000, maxFramerate: 30, scaleResolutionDownBy: 1, degradationPreference: "balanced" },
-            medium: { maxBitrate: 1_000_000, maxFramerate: 18, scaleResolutionDownBy: 1.4, degradationPreference: "balanced" },
-            poor: { maxBitrate: 450_000, maxFramerate: 10, scaleResolutionDownBy: 2, degradationPreference: "maintain-framerate" },
-        },
-    }
     const wsRef = useRef<WebSocket | null>(null)
     const messageListRef = useRef<HTMLDivElement | null>(null)
 
@@ -88,7 +76,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const activeRoomRef = useRef(activeRoom)
     const voiceConnectedRef = useRef(voiceConnected)
     const currentMessageContextRef = useRef({ activeRoom: "", activeDirectFriend: "" })
-
+    const peerProfileStabilityRef = useRef<Map<string, { candidate: NetworkProfile, hits: number }>>(new Map())
     useEffect(() => {
         voiceConnectedRef.current = voiceConnected
     }, [voiceConnected])
@@ -124,6 +112,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setLocalPreviewScreen(null)
         setStreamStatsByUser({})
         outboundBitrateWindowRef.current.clear()
+        peerNetworkProfileRef.current.clear()
+        peerProfileStabilityRef.current.clear()
         setSelectedScreenUser(null)
         setIsJoiningVoice(false)
     }
@@ -213,8 +203,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     }
 
     const classifyNetworkQuality = (latencyMs: number, fps: number, packetLossPct: number, bitrateKbps: number) => {
-        if (latencyMs <= 120 && fps >= 22 && packetLossPct < 2 && bitrateKbps >= 700) return "good"
-        if (latencyMs <= 260 && fps >= 12 && packetLossPct < 7 && bitrateKbps >= 250) return "medium"
+
+        if (latencyMs <= 150 && fps >= 20 && packetLossPct < 2 && bitrateKbps >= 1_100) return "good"
+        if (latencyMs <= 320 && fps >= 10 && packetLossPct < 7 && bitrateKbps >= 450) return "medium"
         return "poor"
     }
 
@@ -239,8 +230,32 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const adaptVideoSenderForNetwork = (peer: RTCPeerConnection, remoteUser: string, profile: NetworkProfile) => {
         const currentProfile = peerNetworkProfileRef.current.get(remoteUser)
-        if (currentProfile === profile) return
+
+        if (!currentProfile) {
+            peerNetworkProfileRef.current.set(remoteUser, profile)
+            tunePeerSender(peer, "video", profile)
+            tunePeerSender(peer, "audio", profile)
+            return
+        }
+        if (currentProfile === profile) {
+            peerProfileStabilityRef.current.delete(remoteUser)
+            return
+        }
+
+        const previousCandidate = peerProfileStabilityRef.current.get(remoteUser)
+        const stableCandidate = previousCandidate?.candidate === profile
+            ? { candidate: profile, hits: previousCandidate.hits + 1 }
+            : { candidate: profile, hits: 1 }
+        peerProfileStabilityRef.current.set(remoteUser, stableCandidate)
+
+        const currentOrder = NETWORK_PROFILE_ORDER.indexOf(currentProfile)
+        const nextOrder = NETWORK_PROFILE_ORDER.indexOf(profile)
+        const isDowngrade = nextOrder < currentOrder
+        const requiredHits = isDowngrade ? 2 : 3
+        if (stableCandidate.hits < requiredHits) return
+
         peerNetworkProfileRef.current.set(remoteUser, profile)
+        peerProfileStabilityRef.current.delete(remoteUser)
         tunePeerSender(peer, "video", profile)
         tunePeerSender(peer, "audio", profile)
     }
@@ -249,20 +264,12 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             throw new Error("Your browser does not support voice chat")
         }
         if (localStreamRef.current) return localStreamRef.current
-        const stream = await navigator.mediaDevices.getUserMedia({
-            audio: {
-                echoCancellation: true,
-                noiseSuppression: true,
-                autoGainControl: true,
-                sampleRate: 48000,
-                channelCount: 1,
-                sampleSize: 16,
-                // extra constraints for Chromium-based browsers
 
-                ...({ googEchoCancellation: true, googNoiseSuppression: true, googHighpassFilter: true } as any),
-            },
+        const stream = await navigator.mediaDevices.getUserMedia({
+            audio: AUDIO_CONSTRAINTS,
             video: false,
         })
+
         localStreamRef.current = stream
         return stream
     }
@@ -358,11 +365,14 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         })
     }
 
-    const ensurePeerConnection = async (remoteUser: string, roomId: string) => {
+    const ensurePeerConnection = async (remoteUser: string, roomId: string, options?: { preferRelay?: boolean }) => {
         const existing = peerConnectionsRef.current.get(remoteUser)
         if (existing) return existing
 
-        const peer = new RTCPeerConnection(WEBRTC_CONFIGURATION)
+
+        const shouldPreferRelay = Boolean(options?.preferRelay && hasTurnServer())
+        const peer = new RTCPeerConnection(shouldPreferRelay ? WEBRTC_RELAY_CONFIGURATION : WEBRTC_CONFIGURATION)
+
         peerConnectionsRef.current.set(remoteUser, peer)
 
         const localStream = await ensureOutgoingAudioStream()
@@ -966,30 +976,12 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         if (!activeRoom || !voiceConnected) return
         activeVideoModeRef.current = mode
         const stream = mode === "screen"
-            ? await navigator.mediaDevices.getDisplayMedia({
-                video: {
-                    frameRate: { ideal: 24, max: 30 },
-                    width: { ideal: 1600, max: 1920 },
-                    height: { ideal: 900, max: 1080 },
-                },
-                audio: {
-                    echoCancellation: true,
-                    noiseSuppression: true,
-                    sampleRate: 48_000,
-                },
-            })
-            : await navigator.mediaDevices.getUserMedia({
-                video: {
-                    frameRate: { ideal: 24, max: 30 },
-                    width: { ideal: 960, max: 1280 },
-                    height: { ideal: 540, max: 720 },
-                    facingMode: "user",
-                },
-                audio: false,
-            })
+            ? await navigator.mediaDevices.getDisplayMedia(SCREEN_SHARE_CONSTRAINTS)
+            : await navigator.mediaDevices.getUserMedia(CAMERA_SHARE_CONSTRAINTS)
+
 
         stream.getVideoTracks().forEach((track) => {
-            track.contentHint = mode === "screen" ? "detail" : "motion"
+            track.contentHint = VIDEO_TRACK_HINT[mode]
             void track.applyConstraints({
                 frameRate: mode === "camera" ? { ideal: 24, max: 30 } : { ideal: 20, max: 30 },
             }).catch(() => undefined)
@@ -1020,11 +1012,24 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const shouldInitiateOffer = (localUser: string, remoteUser: string) => localUser.localeCompare(remoteUser) > 0
 
     const connectVoicePeerWithRetry = async (remoteUser: string, roomId: string) => {
-        const retries = [0, 400, 900]
-        for (const delay of retries) {
-            if (delay > 0) await wait(delay)
+
+
+        const attempts: Array<{ delayMs: number, preferRelay: boolean }> = [
+            { delayMs: 0, preferRelay: false },
+            { delayMs: 450, preferRelay: hasTurnServer() },
+            { delayMs: 1_000, preferRelay: false },
+        ]
+
+        for (const attempt of attempts) {
+            if (attempt.delayMs > 0) await wait(attempt.delayMs)
             try {
-                await ensurePeerConnection(remoteUser, roomId)
+
+                const existingPeer = peerConnectionsRef.current.get(remoteUser)
+                if (existingPeer && attempt.preferRelay && existingPeer.connectionState !== "connected") {
+                    existingPeer.close()
+                    peerConnectionsRef.current.delete(remoteUser)
+                }
+                await ensurePeerConnection(remoteUser, roomId, { preferRelay: attempt.preferRelay })
                 if (shouldInitiateOffer(username, remoteUser)) {
                     await renegotiateWith(remoteUser, roomId)
                 }
