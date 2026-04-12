@@ -169,3 +169,20 @@ Acik olmasi gereken tipik portlar:
 - **401/403**: `JWT_SECRET` farkli ortamlarda ayni degilse tokenlar gecersiz olur.
 - **CORS hatasi**: `CORS_ALLOWED_ORIGINS` domain listesini kontrol et.
 - **Dosya upload calismiyor**: `UPLOAD_DIR` izinleri (owner/group) yanlis olabilir.
+
+## 11) CSP (Opera/Cloudflare) Uyarilari
+
+Opera/Chromium tabanli tarayicilarda su tur loglar gorulebilir:
+- `script-src` / `connect-src 'none'` report-only ihlalleri
+- `chrome-extension://... Unexpected token 'export'`
+
+Bu loglarin onemli bir kismi tarayici eklentilerinden veya Cloudflare challenge scriptlerinden gelebilir. Uretimde Nginx tarafinda acik bir CSP tanimi kullanin:
+
+```nginx
+add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://static.cloudflareinsights.com https://gravitall.today; script-src-elem 'self' https://static.cloudflareinsights.com https://gravitall.today; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https: wss:; frame-ancestors 'none'; base-uri 'self'; object-src 'none'" always;
+```
+
+Notlar:
+- `connect-src 'none'` kesinlikle kullanmayin; API/WebSocket baglantisini keser.
+- Report-only modundan enforce moda gecmeden once staging ortaminda test edin.
+- Eklenti kaynakli `chrome-extension://` hatalari uygulama kodundan bagimsiz olabilir.

@@ -29,6 +29,8 @@ export interface ChatMessage {
     width?: number
     height?: number
     network_status?: "good" | "medium" | "poor"
+    audio_bitrate_kbps?: number
+    quality_limitation_reason?: string
     sdp?: string
     candidate?: string
     sdp_mid?: string
@@ -127,7 +129,33 @@ export interface StreamStats {
     width: number
     height: number
     networkQuality: "good" | "medium" | "poor"
+    audioBitrateKbps: number
+    qualityLimitationReason: string
     timestamp: string
+}
+
+export interface ConnectionDiagnostics {
+    route: "p2p" | "turn-relay" | "unknown"
+    protocol: "udp" | "tcp" | "tls" | "unknown"
+    iceState: RTCIceConnectionState
+    connectionState: RTCPeerConnectionState
+    rttMs: number
+    availableOutgoingKbps: number
+    localCandidate: {
+        candidateType: string
+        protocol: "udp" | "tcp" | "tls" | "unknown"
+        address: string
+        port: number
+        networkType: string
+    } | null
+    remoteCandidate: {
+        candidateType: string
+        protocol: "udp" | "tcp" | "tls" | "unknown"
+        address: string
+        port: number
+        networkType: string
+    } | null
+    lastUpdatedAt: string
 }
 
 export interface RoomMeta {

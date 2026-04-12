@@ -55,6 +55,7 @@ export const ChatWorkspace = (props: ChatWorkspaceProps) => {
         remoteAudios={state.remoteAudios}
         selectedScreenUser={state.selectedScreenUser}
         streamStatsByUser={state.streamStatsByUser}
+
         isJoiningVoice={state.isJoiningVoice}
         visibleMessages={state.visibleMessages}
         activeRoomMeta={state.activeRoomMeta}

@@ -105,4 +105,3 @@ export const extractDiagnosticsFromRtcStats = (
         lastUpdatedAt: new Date().toISOString(),
     }
 }
-

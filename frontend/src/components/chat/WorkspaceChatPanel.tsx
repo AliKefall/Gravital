@@ -1,8 +1,8 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type RefObject } from "react"
 import { MessageContent } from "./MessageContent"
-import type { ChatMessage, RemoteAudio, RemoteScreen, RoomMeta, StreamStats } from "./types"
-import type { ConnectionDiagnostics } from "./webrtc/connectionDiagnostics"
+import type { ChatMessage, ConnectionDiagnostics, RemoteAudio, RemoteScreen, RoomMeta, StreamStats } from "./types"
+
 
 interface WorkspaceChatPanelProps {
   status: "connecting" | "online" | "reconnecting" | "offline"
@@ -73,8 +73,8 @@ export const WorkspaceChatPanel = ({
   messageListRef,
   selectedScreenUser,
   streamStatsByUser,
-  isJoiningVoice,
   connectionDiagnosticsByUser,
+  isJoiningVoice,
   onMessageTextChange,
   onSendMessage,
   onToggleVoice,
@@ -164,6 +164,11 @@ export const WorkspaceChatPanel = ({
     () => Object.values(streamStatsByUser).sort((a, b) => a.username.localeCompare(b.username)),
     [streamStatsByUser],
   )
+  const pendingScreenSharers = useMemo(() => {
+    const renderedUsers = new Set<string>(remoteScreens.map((item) => item.username))
+    if (localPreviewScreen) renderedUsers.add(localPreviewScreen.username)
+    return activeRoomScreenSharers.filter((member) => !renderedUsers.has(member))
+  }, [activeRoomScreenSharers, localPreviewScreen, remoteScreens])
 
   return (
     <section className="chat-panel">
@@ -294,6 +299,16 @@ export const WorkspaceChatPanel = ({
                   </div>
                 </article>
               ))}
+              {pendingScreenSharers.map((member) => (
+                <article key={`pending-screen-${member}`} className="screen-card">
+                  <div className="screen-card-header">
+                    <h4>@{member}</h4>
+                  </div>
+                  <div className="stream-stats-inline">
+                    <span>Yayın aktif, akış bağlanıyor...</span>
+                  </div>
+                </article>
+              ))}
             </div>
             <section className="stream-metrics-panel">
               <h4>Bağlantı rotası izleme (UDP/TURN/P2P)</h4>
@@ -347,9 +362,11 @@ export const WorkspaceChatPanel = ({
                         <th>Gecikme</th>
                         <th>FPS</th>
                         <th>Bitrate</th>
+                        <th>Audio</th>
                         <th>Kayıp</th>
                         <th>Jitter</th>
                         <th>UpLink</th>
+                        <th>Sebep</th>
                         <th>Çözünürlük</th>
                         <th>Kalite</th>
                       </tr>
@@ -361,9 +378,11 @@ export const WorkspaceChatPanel = ({
                           <td>{Math.round(stats.latencyMs)} ms</td>
                           <td>{stats.fps.toFixed(1)}</td>
                           <td>{stats.bitrateKbps.toFixed(0)} kbps</td>
+                          <td>{stats.audioBitrateKbps.toFixed(0)} kbps</td>
                           <td>{stats.packetLossPct.toFixed(1)}%</td>
                           <td>{stats.jitterMs.toFixed(1)} ms</td>
                           <td>{stats.availableOutgoingKbps.toFixed(0)} kbps</td>
+                          <td>{stats.qualityLimitationReason}</td>
                           <td>{stats.width > 0 && stats.height > 0 ? `${stats.width}x${stats.height}` : "-"}</td>
                           <td>{stats.networkQuality}</td>
                         </tr>

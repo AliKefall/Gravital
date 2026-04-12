@@ -55,6 +55,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const [screenSharersByRoom, setScreenSharersByRoom] = useState<Record<string, string[]>>({})
     const [selectedScreenUser, setSelectedScreenUser] = useState<string | null>(null)
     const [streamStatsByUser, setStreamStatsByUser] = useState<Record<string, StreamStats>>({})
+    const [connectionDiagnosticsByUser, setConnectionDiagnosticsByUser] = useState<Record<string, ConnectionDiagnostics>>({})
     const [outputVolume, setOutputVolume] = useState(100)
     const [micVolume, setMicVolume] = useState(100)
     const [noiseGateDb, setNoiseGateDb] = useState(-55)
@@ -74,12 +75,13 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const reconnectAttemptRef = useRef(0)
     const peerNetworkProfileRef = useRef<Map<string, NetworkProfile>>(new Map())
     const outboundBitrateWindowRef = useRef<Map<string, { bytesSent: number, timestampMs: number }>>(new Map())
+    const outboundAudioBitrateWindowRef = useRef<Map<string, { bytesSent: number, timestampMs: number }>>(new Map())
     const activeVideoModeRef = useRef<VideoMode>("screen")
     const activeRoomRef = useRef(activeRoom)
     const voiceConnectedRef = useRef(voiceConnected)
     const currentMessageContextRef = useRef({ activeRoom: "", activeDirectFriend: "" })
     const peerProfileStabilityRef = useRef<Map<string, { candidate: NetworkProfile, hits: number }>>(new Map())
-    const [connectionDiagnosticsByUser, setConnectionDiagnosticsByUser] = useState<Record<string, ConnectionDiagnostics>>({})
+
 
     useEffect(() => {
         voiceConnectedRef.current = voiceConnected
@@ -116,7 +118,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setLocalPreviewScreen(null)
         setConnectionDiagnosticsByUser({})
         setStreamStatsByUser({})
+        setConnectionDiagnosticsByUser({})
         outboundBitrateWindowRef.current.clear()
+        outboundAudioBitrateWindowRef.current.clear()
         peerNetworkProfileRef.current.clear()
         peerProfileStabilityRef.current.clear()
         setSelectedScreenUser(null)
@@ -148,18 +152,22 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     }
 
     const publishLocalStreamMetrics = () => {
-        if (!activeRoomRef.current || !screenStreamRef.current) return
+        if (!activeRoomRef.current) return
         peerConnectionsRef.current.forEach((peer, remoteUser) => {
             peer.getStats().then((stats) => {
                 let outboundVideo: Record<string, unknown> | undefined
+                let outboundAudio: Record<string, unknown> | undefined
                 let candidatePair: Record<string, unknown> | undefined
                 let remoteInboundVideo: Record<string, unknown> | undefined
                 stats.forEach((item) => {
                     const typedItem = item as unknown as Record<string, unknown>
                     if (typedItem.type === "outbound-rtp" && typedItem.kind === "video") outboundVideo = typedItem
+                    if (typedItem.type === "outbound-rtp" && typedItem.kind === "audio") outboundAudio = typedItem
                     if (typedItem.type === "candidate-pair" && typedItem.state === "succeeded" && typeof typedItem.currentRoundTripTime === "number") candidatePair = typedItem
                     if (typedItem.type === "remote-inbound-rtp" && typedItem.kind === "video") remoteInboundVideo = typedItem
                 })
+                const diagnostics = extractDiagnosticsFromRtcStats(stats, peer)
+                setConnectionDiagnosticsByUser((prev) => ({ ...prev, [remoteUser]: diagnostics }))
                 if (!outboundVideo) return
                 const fps = Number(outboundVideo.framesPerSecond ?? 0)
                 const currentBytesSent = Number(outboundVideo.bytesSent ?? 0)
@@ -172,12 +180,23 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                     bitrateKbps = (bytesDelta * 8) / elapsedMs
                 }
                 outboundBitrateWindowRef.current.set(remoteUser, { bytesSent: currentBytesSent, timestampMs: currentTimestampMs })
+                const currentAudioBytesSent = Number(outboundAudio?.bytesSent ?? 0)
+                const currentAudioTimestampMs = Number(outboundAudio?.timestamp ?? Date.now())
+                const previousAudioSnapshot = outboundAudioBitrateWindowRef.current.get(remoteUser)
+                let audioBitrateKbps = 0
+                if (previousAudioSnapshot) {
+                    const bytesDelta = Math.max(0, currentAudioBytesSent - previousAudioSnapshot.bytesSent)
+                    const elapsedMs = Math.max(1, currentAudioTimestampMs - previousAudioSnapshot.timestampMs)
+                    audioBitrateKbps = (bytesDelta * 8) / elapsedMs
+                }
+                outboundAudioBitrateWindowRef.current.set(remoteUser, { bytesSent: currentAudioBytesSent, timestampMs: currentAudioTimestampMs })
                 const latencyMs = Math.round(Number(candidatePair?.currentRoundTripTime ?? 0) * 1000)
                 const packetLossPct = Number(remoteInboundVideo?.fractionLost ?? 0) * 100
                 const jitterMs = Number(remoteInboundVideo?.jitter ?? 0) * 1000
                 const availableOutgoingKbps = Number(candidatePair?.availableOutgoingBitrate ?? 0) / 1000
                 const width = Number(outboundVideo.frameWidth ?? 0)
                 const height = Number(outboundVideo.frameHeight ?? 0)
+                const qualityLimitationReason = String(outboundVideo.qualityLimitationReason ?? "none")
                 const quality = classifyNetworkQuality(latencyMs, fps, packetLossPct, bitrateKbps)
                 send({
                     type: "stream_metrics",
@@ -191,6 +210,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                     available_outgoing_kbps: Number(availableOutgoingKbps.toFixed(1)),
                     width,
                     height,
+                    audio_bitrate_kbps: Number(audioBitrateKbps.toFixed(1)),
+                    quality_limitation_reason: qualityLimitationReason,
                     network_status: quality,
                     timestamp: new Date().toISOString(),
                 })
@@ -215,8 +236,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const classifyNetworkQuality = (latencyMs: number, fps: number, packetLossPct: number, bitrateKbps: number) => {
 
-        if (latencyMs <= 150 && fps >= 20 && packetLossPct < 2 && bitrateKbps >= 1_100) return "good"
-        if (latencyMs <= 320 && fps >= 10 && packetLossPct < 7 && bitrateKbps >= 450) return "medium"
+        if (latencyMs <= 180 && fps >= 18 && packetLossPct < 2.5) return "good"
+        if (latencyMs <= 380 && fps >= 8 && packetLossPct < 8) return "medium"
+        if (bitrateKbps >= 550 && packetLossPct < 5) return "medium"
         return "poor"
     }
 
@@ -233,7 +255,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 parameters.degradationPreference = videoProfile.degradationPreference
                 parameters.encodings[0].priority = profile === "poor" ? "very-low" : "medium"
             } else {
-                parameters.encodings[0].maxBitrate = profile === "poor" ? 56_000 : 128_000
+                parameters.encodings[0].maxBitrate = profile === "poor" ? 72_000 : 128_000
                 parameters.encodings[0].priority = "high"
             }
             void sender.setParameters(parameters).catch(() => undefined)
@@ -541,6 +563,12 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                     if (payload.type === "screen_share_state") {
                         const state = payload as RoomScreenStatePayload
                         setScreenSharersByRoom((prev) => ({ ...prev, [state.room_id]: Array.from(new Set(state.active_users ?? [])) }))
+                        if (voiceConnectedRef.current && state.room_id === activeRoomRef.current) {
+                            const missingPeers = (state.active_users ?? []).filter((member) => member !== username && !peerConnectionsRef.current.has(member))
+                            missingPeers.forEach((member) => {
+                                void connectVoicePeerWithRetry(member, state.room_id).catch(() => undefined)
+                            })
+                        }
                         return
                     }
 
@@ -676,6 +704,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                         const availableOutgoingKbps = Number(payload.available_outgoing_kbps ?? 0)
                         const width = Number(payload.width ?? 0)
                         const height = Number(payload.height ?? 0)
+                        const audioBitrateKbps = Number(payload.audio_bitrate_kbps ?? 0)
+                        const qualityLimitationReason = String(payload.quality_limitation_reason ?? "none")
                         const networkStatus = payload.network_status === "good" || payload.network_status === "medium" || payload.network_status === "poor"
                             ? payload.network_status
                             : classifyNetworkQuality(latencyMs, fps, packetLossPct, bitrateKbps)
@@ -692,6 +722,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                                 availableOutgoingKbps,
                                 width,
                                 height,
+                                audioBitrateKbps,
+                                qualityLimitationReason,
                                 networkQuality: networkStatus,
                                 timestamp: payload.timestamp ?? new Date().toISOString(),
                             },
