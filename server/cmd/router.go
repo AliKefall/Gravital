@@ -36,6 +36,7 @@ func buildRouter(config *ServerConfig, deps *serverDependencies) chi.Router {
 	})
 
 	registerUploadsRoute(r)
+	r.Get("/webrtc/config", deps.handler.WebRTCConfigHandler)
 	r.Handle("/metrics", promhttp.Handler())
 	registerAuthRoutes(r, deps)
 	registerWebsocketRoute(r, deps)

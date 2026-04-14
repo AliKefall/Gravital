@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
 import { logoutUser } from "../../api/auth"
 import { acceptFriendRequest, addFriend, fetchFriendRequests, fetchFriends, rejectFriendRequest } from "../../api/friends"
-import { API_BASE_URL, WEBRTC_CONFIGURATION, WEBRTC_RELAY_CONFIGURATION, WS_BASE_URL, buildAddFriendToRoomPayload, hasTurnServer } from "./constants"
+import { API_BASE_URL, WEBRTC_CONFIGURATION, WEBRTC_RELAY_CONFIGURATION, WS_BASE_URL, applyRuntimeIceConfig, buildAddFriendToRoomPayload, hasTurnServer } from "./constants"
 import type {
     ChatMessage,
     ChatWorkspaceProps,
@@ -91,6 +91,31 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     useEffect(() => {
         currentMessageContextRef.current = { activeRoom, activeDirectFriend }
     }, [activeRoom, activeDirectFriend])
+
+    useEffect(() => {
+        const controller = new AbortController()
+        void (async () => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/webrtc/config`, { signal: controller.signal })
+                if (!response.ok) return
+                const payload = await response.json() as {
+                    stun_urls?: string[]
+                    turn_urls?: string[]
+                    turn_username?: string
+                    turn_credential?: string
+                }
+                applyRuntimeIceConfig({
+                    stunUrls: payload.stun_urls,
+                    turnUrls: payload.turn_urls,
+                    turnUsername: payload.turn_username,
+                    turnCredential: payload.turn_credential,
+                })
+            } catch {
+                // keep env-based defaults
+            }
+        })()
+        return () => controller.abort()
+    }, [])
 
     const cleanupVoiceConnections = () => {
         if (streamMetricsIntervalRef.current) {
@@ -298,7 +323,6 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }
         if (localStreamRef.current) return localStreamRef.current
 
-
         let stream = await navigator.mediaDevices.getUserMedia({
 
             audio: AUDIO_CONSTRAINTS,
@@ -319,9 +343,14 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             throw new Error("No audio tracks in microphone stream")
         }
 
-
         const audioContext = new window.AudioContext()
-        const source = audioContext.createMediaStreamSource(localStream)
+        let source: MediaStreamAudioSourceNode
+        try {
+            source = audioContext.createMediaStreamSource(localStream)
+        } catch {
+            void audioContext.close().catch(() => undefined)
+            return localStream
+        }
         const gainNode = audioContext.createGain()
         const highPass = audioContext.createBiquadFilter()
         highPass.type = "highpass"
@@ -342,6 +371,33 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         localGainNodeRef.current = gainNode
         processedLocalStreamRef.current = destination.stream
         return destination.stream
+    }
+
+    const detachScreenShareAudioFromMix = () => {
+        if (!screenShareAudioSourceRef.current) return
+        screenShareAudioSourceRef.current.disconnect()
+        screenShareAudioSourceRef.current = null
+    }
+
+    const attachScreenShareAudioToMix = async (stream: MediaStream) => {
+        if (stream.getAudioTracks().length === 0) {
+            detachScreenShareAudioFromMix()
+            return
+        }
+        await ensureOutgoingAudioStream()
+        const audioContext = localAudioContextRef.current
+        const gainNode = localGainNodeRef.current
+        if (!audioContext || !gainNode) return
+        detachScreenShareAudioFromMix()
+        let screenShareSource: MediaStreamAudioSourceNode
+        try {
+            screenShareSource = audioContext.createMediaStreamSource(stream)
+        } catch {
+            detachScreenShareAudioFromMix()
+            return
+        }
+        screenShareSource.connect(gainNode)
+        screenShareAudioSourceRef.current = screenShareSource
     }
 
     const upsertRemoteAudio = (remoteUser: string, stream: MediaStream) => {
@@ -1046,6 +1102,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             track.addEventListener("ended", stopScreenShare)
         })
         screenStreamRef.current = stream
+        if (mode === "screen") {
+            await attachScreenShareAudioToMix(stream)
+        }
         setLocalPreviewScreen({ username, stream })
         setScreenSharing(mode === "screen")
         setCameraSharing(mode === "camera")
