@@ -470,8 +470,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }
 
         peer.ontrack = (event) => {
-            const [stream] = event.streams
-            if (!stream) return
+
+            const [firstStream] = event.streams
+            const stream = firstStream ?? new MediaStream([event.track])
+
             if (event.track.kind === "video") {
                 upsertRemoteScreen(remoteUser, stream)
             } else {
