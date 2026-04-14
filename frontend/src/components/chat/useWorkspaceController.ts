@@ -324,19 +324,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         if (localStreamRef.current) return localStreamRef.current
 
         let stream = await navigator.mediaDevices.getUserMedia({
+
             audio: AUDIO_CONSTRAINTS,
             video: false,
         })
-        if (stream.getAudioTracks().length === 0) {
-            stream.getTracks().forEach((track) => track.stop())
-            stream = await navigator.mediaDevices.getUserMedia({
-                audio: true,
-                video: false,
-            })
-        }
-        if (stream.getAudioTracks().length === 0) {
-            throw new Error("No microphone track available")
-        }
 
         localStreamRef.current = stream
         return stream
@@ -347,6 +338,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         const localStream = await ensureLocalAudioStream()
         if (!window.AudioContext) return localStream
         if (processedLocalStreamRef.current) return processedLocalStreamRef.current
+
         if (localStream.getAudioTracks().length === 0) {
             throw new Error("No audio tracks in microphone stream")
         }
@@ -501,8 +493,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }
 
         peer.ontrack = (event) => {
-            const [stream] = event.streams
-            if (!stream) return
+
+            const [firstStream] = event.streams
+            const stream = firstStream ?? new MediaStream([event.track])
+
             if (event.track.kind === "video") {
                 upsertRemoteScreen(remoteUser, stream)
             } else {
@@ -1072,7 +1066,6 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const stopScreenShare = () => {
         if (!screenStreamRef.current || !activeRoomRef.current) return
-        detachScreenShareAudioFromMix()
         const sharedTrackIds = new Set(screenStreamRef.current.getTracks().map((track) => track.id))
         screenStreamRef.current.getTracks().forEach((track) => track.stop())
         peerConnectionsRef.current.forEach((peer) => {
