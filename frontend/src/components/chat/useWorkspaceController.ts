@@ -449,7 +449,11 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         tunePeerSender(peer, "audio", "medium")
         if (screenStreamRef.current) {
             screenStreamRef.current.getAudioTracks().forEach((track) => peer.addTrack(track, screenStreamRef.current as MediaStream))
-            tunePeerSender(peer, "video", "medium")
+
+            screenStreamRef.current.getVideoTracks().forEach((track) => peer.addTrack(track, screenStreamRef.current as MediaStream))
+            if (screenStreamRef.current.getVideoTracks().length > 0) {
+                tunePeerSender(peer, "video", "medium")
+            }
         }
 
         peer.onicecandidate = (event) => {
