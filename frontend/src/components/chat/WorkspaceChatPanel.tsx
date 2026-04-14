@@ -533,6 +533,10 @@ export const WorkspaceChatPanel = ({
             remoteAudioElementsRef.current.set(remoteAudio.username, element)
             if (element.srcObject !== remoteAudio.stream) element.srcObject = remoteAudio.stream
             if (!remoteAnalyzersRef.current.has(remoteAudio.username) && window.AudioContext) {
+              if (remoteAudio.stream.getAudioTracks().length === 0) {
+                element.muted = true
+                return
+              }
               const context = new window.AudioContext()
               const source = context.createMediaStreamSource(remoteAudio.stream)
               const analyser = context.createAnalyser()

@@ -59,6 +59,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const [outputVolume, setOutputVolume] = useState(100)
     const [micVolume, setMicVolume] = useState(100)
     const [noiseGateDb, setNoiseGateDb] = useState(-55)
+    const screenShareAudioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
     const processedLocalStreamRef = useRef<MediaStream | null>(null)
     const localAudioContextRef = useRef<AudioContext | null>(null)
     const localGainNodeRef = useRef<GainNode | null>(null)
@@ -104,6 +105,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         localAudioContextRef.current?.close().catch(() => undefined)
         localAudioContextRef.current = null
         localGainNodeRef.current = null
+        screenShareAudioSourceRef.current = null
         processedLocalStreamRef.current = null
 
         peerDisconnectTimeoutsRef.current.forEach((timerID) => window.clearTimeout(timerID))
@@ -296,7 +298,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }
         if (localStreamRef.current) return localStreamRef.current
 
-        const stream = await navigator.mediaDevices.getUserMedia({
+
+        let stream = await navigator.mediaDevices.getUserMedia({
+
             audio: AUDIO_CONSTRAINTS,
             video: false,
         })
@@ -310,6 +314,11 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         const localStream = await ensureLocalAudioStream()
         if (!window.AudioContext) return localStream
         if (processedLocalStreamRef.current) return processedLocalStreamRef.current
+
+        if (localStream.getAudioTracks().length === 0) {
+            throw new Error("No audio tracks in microphone stream")
+        }
+
 
         const audioContext = new window.AudioContext()
         const source = audioContext.createMediaStreamSource(localStream)
@@ -410,10 +419,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         localStream.getTracks().forEach((track) => peer.addTrack(track, localStream))
         tunePeerSender(peer, "audio", "medium")
         if (screenStreamRef.current) {
-
             screenStreamRef.current.getTracks().forEach((track) => peer.addTrack(track, screenStreamRef.current as MediaStream))
             tunePeerSender(peer, "video", "medium")
-
         }
 
         peer.onicecandidate = (event) => {
