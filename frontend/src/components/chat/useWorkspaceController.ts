@@ -55,6 +55,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const [screenSharersByRoom, setScreenSharersByRoom] = useState<Record<string, string[]>>({})
     const [selectedScreenUser, setSelectedScreenUser] = useState<string | null>(null)
     const [streamStatsByUser, setStreamStatsByUser] = useState<Record<string, StreamStats>>({})
+    const screenShareAudioSourceRef = useRef<MediaStreamAudioSourceNode | null>(null)
     const [connectionDiagnosticsByUser, setConnectionDiagnosticsByUser] = useState<Record<string, ConnectionDiagnostics>>({})
     const [outputVolume, setOutputVolume] = useState(100)
     const [micVolume, setMicVolume] = useState(100)
@@ -116,6 +117,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setRemoteAudios([])
         setRemoteScreens([])
         setLocalPreviewScreen(null)
+        screenShareAudioSourceRef.current = null
         setConnectionDiagnosticsByUser({})
         setStreamStatsByUser({})
         setConnectionDiagnosticsByUser({})
@@ -296,10 +298,21 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }
         if (localStreamRef.current) return localStreamRef.current
 
-        const stream = await navigator.mediaDevices.getUserMedia({
+        // if you use const in this whenever someone allows their device sound like a youtube videos sound when screen sharing it will block their microphone and it will give dom error to every other participant so don't use const in this one.
+        let stream = await navigator.mediaDevices.getUserMedia({
             audio: AUDIO_CONSTRAINTS,
             video: false,
         })
+        if (stream.getAudioTracks().length === 0) {
+            stream.getTracks().forEach((track) => track.stop())
+            stream = await navigator.mediaDevices.getUserMedia({
+                audio: true,
+                video: false,
+            })
+        }
+        if (stream.getAudioTracks().length === 0) {
+            throw new Error("No microphone track available")
+        }
 
         localStreamRef.current = stream
         return stream
@@ -310,6 +323,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         const localStream = await ensureLocalAudioStream()
         if (!window.AudioContext) return localStream
         if (processedLocalStreamRef.current) return processedLocalStreamRef.current
+        if (localStream.getAudioTracks().length === 0) {
+            throw new Error("No audio tracks in microphone stream")
+        }
+
 
         const audioContext = new window.AudioContext()
         const source = audioContext.createMediaStreamSource(localStream)
@@ -333,6 +350,27 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         localGainNodeRef.current = gainNode
         processedLocalStreamRef.current = destination.stream
         return destination.stream
+    }
+
+    const detachScreenShareAudioFromMix = () => {
+        if (!screenShareAudioSourceRef.current) return
+        screenShareAudioSourceRef.current.disconnect()
+        screenShareAudioSourceRef.current = null
+    }
+
+    const attachScreenShareAudioToMix = async (stream: MediaStream) => {
+        if (stream.getAudioTracks().length === 0) {
+            detachScreenShareAudioFromMix()
+            return
+        }
+        await ensureOutgoingAudioStream()
+        const audioContext = localAudioContextRef.current
+        const gainNode = localGainNodeRef.current
+        if (!audioContext || !gainNode) return
+        detachScreenShareAudioFromMix()
+        const screenShareSource = audioContext.createMediaStreamSource(stream)
+        screenShareSource.connect(gainNode)
+        screenShareAudioSourceRef.current = screenShareSource
     }
 
     const upsertRemoteAudio = (remoteUser: string, stream: MediaStream) => {
@@ -410,7 +448,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         localStream.getTracks().forEach((track) => peer.addTrack(track, localStream))
         tunePeerSender(peer, "audio", "medium")
         if (screenStreamRef.current) {
-            screenStreamRef.current.getTracks().forEach((track) => peer.addTrack(track, screenStreamRef.current as MediaStream))
+            screenStreamRef.current.getAudioTracks().forEach((track) => peer.addTrack(track, screenStreamRef.current as MediaStream))
             tunePeerSender(peer, "video", "medium")
         }
 
@@ -999,6 +1037,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const stopScreenShare = () => {
         if (!screenStreamRef.current || !activeRoomRef.current) return
+        detachScreenShareAudioFromMix()
         const sharedTrackIds = new Set(screenStreamRef.current.getTracks().map((track) => track.id))
         screenStreamRef.current.getTracks().forEach((track) => track.stop())
         peerConnectionsRef.current.forEach((peer) => {
@@ -1035,6 +1074,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             track.addEventListener("ended", stopScreenShare)
         })
         screenStreamRef.current = stream
+        if (mode === "screen") {
+            await attachScreenShareAudioToMix(stream)
+        }
+
         setLocalPreviewScreen({ username, stream })
         setScreenSharing(mode === "screen")
         setCameraSharing(mode === "camera")
@@ -1042,7 +1085,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         for (const remoteUser of roomMeta[activeRoom]?.activeUsers ?? []) {
             if (remoteUser === username) continue
             const peer = await ensurePeerConnection(remoteUser, activeRoom)
-            stream.getTracks().forEach((track) => peer.addTrack(track, stream))
+            stream.getAudioTracks().forEach((track) => peer.addTrack(track, stream))
             tunePeerSender(peer, "video", "medium")
             await renegotiateWith(remoteUser, activeRoom)
         }
