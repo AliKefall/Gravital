@@ -1,38 +1,43 @@
+version: "3.9"
+
 services:
   backend:
     build: .
     container_name: gravital-backend
     ports:
       - "8080:8080"
-    environment:
-      PORT: 8080
-      DATABASE_URL: "libsql://gravital-alikefall.aws-eu-west-1.turso.io"
-      DB_AUTH_TOKEN: "eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzI0NjA4NzgsImlkIjoiZDZjMmM4MmItM2VmMi00MWM1LWIyNTktNTcxZjFjNjY0NTk5IiwicmlkIjoiZjBkOWZiOGUtNjFhNy00MzQzLTgwYjAtMzdmZmJiODk4YjQwIn0.UbY8khGSK0tNGeBLkoWkdH-S6_RuCvP2oKOyDxUUZt8ZQ_wxAg0oo5exYqN4UqEXDQHHKl93RPH0BaJeNAAMBg"
-      JWT_SECRET: "tygertygerburningbrightintheforestsofthenightwhatimmortalhandoreyecouldframethyfearfulsymmetry"
-      CORS_ALLOWED_ORIGINS: "https://gravitall.today,https://www.gravitall.today,https://api.gravitall.today,http://localhost:5173,http://localhost:8080"
-      UPLOAD_DIR: "/var/www/gravital-uploads"
-      WS_ALLOWED_ORIGINS: "https://gravitall.today,https://www.gravitall.today,http://localhost:5173,http://localhost:8080"
+    env_file:
+      - .env
+    volumes:
+      - uploads:/var/www/gravital-uploads
     restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:latest
-    container_name: prometheus
+    container_name: gravital-prometheus
     ports:
       - "9090:9090"
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
     depends_on:
       - backend
     restart: unless-stopped
 
   grafana:
     image: grafana/grafana:latest
-    container_name: grafana
+    container_name: gravital-grafana
     ports:
       - "3001:3000"
-    environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=g!48875qwedzxsa
+    env_file:
+      - .env
+    volumes:
+      - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
     restart: unless-stopped
+
+volumes:
+  uploads:
+  prometheus_data:
+  grafana_data:

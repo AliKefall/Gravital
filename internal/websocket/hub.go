@@ -33,6 +33,27 @@ type Hub struct {
 	mu             sync.RWMutex
 }
 
+func (h *Hub) observeMessage(direction string, messageType string) {
+	if h == nil || h.Metrics == nil {
+		return
+	}
+	h.Metrics.ObserveWSMessage(direction, messageType)
+}
+
+func (h *Hub) incActiveConnections() {
+	if h == nil || h.Metrics == nil {
+		return
+	}
+	h.Metrics.IncWSActiveConnections()
+}
+
+func (h *Hub) decActiveConnections() {
+	if h == nil || h.Metrics == nil {
+		return
+	}
+	h.Metrics.DecWSActiveConnections()
+}
+
 type PresenceEvent struct {
 	Username  string
 	IsOnline  bool
@@ -92,7 +113,7 @@ func (h *Hub) Run() {
 				h.Users[client.Username][client] = true
 			}
 			h.mu.Unlock()
-			h.Metrics.IncWSActiveConnections()
+			h.incActiveConnections()
 			if becameOnline {
 				h.publishPresence(client.Username, true)
 			}
@@ -133,7 +154,7 @@ func (h *Hub) Run() {
 			}
 			close(client.Send)
 			h.mu.Unlock()
-			h.Metrics.DecWSActiveConnections()
+			h.decActiveConnections()
 			if becameOffline {
 				h.publishPresence(client.Username, false)
 			}
@@ -163,7 +184,7 @@ func (h *Hub) publishPresence(username string, isOnline bool) {
 }
 
 func (h *Hub) HandleMessage(sender *Client, msg Message) {
-	h.Metrics.ObserveWSMessage("inbound", string(msg.Type))
+	h.observeMessage("ibnound", string(msg.Type))
 	switch msg.Type {
 	case TypeJoinRoom:
 		h.joinRoom(sender, msg.RoomID)
@@ -572,7 +593,7 @@ func (h *Hub) sendToRoom(sender *Client, roomID string, msg Message) {
 
 	data, _ := json.Marshal(msg)
 
-	h.Metrics.ObserveWSMessage("outbound", string(msg.Type))
+	h.observeMessage("outbound", string(msg.Type))
 
 	for _, client := range recipients {
 		select {
@@ -779,7 +800,7 @@ func (h *Hub) updateScreenShareState(roomID, username string, isSharing bool) {
 
 // I'll transport this into admin site when I do write one, for now this stays here.
 func (h *Hub) sendSystem(client *Client, roomID, content string) {
-	h.Metrics.ObserveWSMessage("outbound", string(TypeSystem))
+	h.observeMessage("outbound", string(TypeSystem))
 	if client == nil {
 		return
 	}
@@ -798,7 +819,7 @@ func (h *Hub) sendSystem(client *Client, roomID, content string) {
 }
 
 func (h *Hub) sendDirect(username string, msg Message) {
-	h.Metrics.ObserveWSMessage("outbound", string(msg.Type))
+	h.observeMessage("outbound", string(msg.Type))
 	h.mu.RLock()
 	connections, ok := h.Users[username]
 	recipients := make([]*Client, 0, len(connections))
@@ -840,7 +861,7 @@ func (h *Hub) PublishSocialEvent(usernames []string, content string) {
 }
 
 func (h *Hub) broadcastPresence(username string, isOnline bool, timestamp string) {
-	h.Metrics.ObserveWSMessage("outbound", string(TypePresence))
+	h.observeMessage("outbound", string(TypePresence))
 	if strings.TrimSpace(username) == "" {
 		return
 	}

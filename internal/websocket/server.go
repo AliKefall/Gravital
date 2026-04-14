@@ -34,11 +34,15 @@ var upgrader = websocket.Upgrader{
 func ServeWS(hub *Hub, metrics *observability.PrometheusMetrics, w http.ResponseWriter, r *http.Request, userID string, username string, onConnected func(*Client)) {
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		metrics.ObserveWSConnectionAttempt("upgrade_failed")
+		if metrics != nil {
+			metrics.ObserveWSConnectionAttempt("upgrade_failed")
+		}
 		log.Println("Error while serving websocket: ", err)
 		return
 	}
-	metrics.ObserveWSConnectionAttempt("connected")
+	if metrics != nil {
+		metrics.ObserveWSConnectionAttempt("connected")
+	}
 	client := &Client{
 		UserID:   userID,
 		Username: username,

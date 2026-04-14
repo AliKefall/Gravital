@@ -13,7 +13,7 @@ export const AUDIO_CONSTRAINTS: MediaTrackConstraints = {
 
 export const SCREEN_SHARE_CONSTRAINTS: DisplayMediaStreamOptions = {
     video: {
-        frameRate: { ideal: 24, max: 30 },
+        frameRate: { ideal: 30, max: 30 },
         width: { ideal: 1920, max: 2560 },
         height: { ideal: 1080, max: 1440 },
     },
@@ -26,7 +26,7 @@ export const SCREEN_SHARE_CONSTRAINTS: DisplayMediaStreamOptions = {
 
 export const CAMERA_SHARE_CONSTRAINTS: MediaStreamConstraints = {
     video: {
-        frameRate: { ideal: 24, max: 30 },
+        frameRate: { ideal: 30, max: 30 },
         width: { ideal: 1280, max: 1920 },
         height: { ideal: 720, max: 1080 },
         facingMode: "user",

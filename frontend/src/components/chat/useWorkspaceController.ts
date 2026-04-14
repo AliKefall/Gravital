@@ -219,10 +219,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 adaptVideoSenderForNetwork(peer, remoteUser, profile)
             }).catch(() => undefined)
 
-            peer.getStats().then((stats) => {
-                const diagnostics = extractDiagnosticsFromRtcStats(stats, peer)
-                setConnectionDiagnosticsByUser((prev) => ({ ...prev, [remoteUser]: diagnostics }))
-            }).catch(() => undefined)
+
 
         })
     }
@@ -236,7 +233,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const classifyNetworkQuality = (latencyMs: number, fps: number, packetLossPct: number, bitrateKbps: number) => {
 
-        if (latencyMs <= 180 && fps >= 18 && packetLossPct < 2.5) return "good"
+        if (latencyMs <= 180 && fps >= 24 && packetLossPct < 2.5) return "good"
         if (latencyMs <= 380 && fps >= 8 && packetLossPct < 8) return "medium"
         if (bitrateKbps >= 550 && packetLossPct < 5) return "medium"
         return "poor"
@@ -253,9 +250,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 parameters.encodings[0].maxFramerate = videoProfile.maxFramerate
                 parameters.encodings[0].scaleResolutionDownBy = videoProfile.scaleResolutionDownBy
                 parameters.degradationPreference = videoProfile.degradationPreference
-                parameters.encodings[0].priority = profile === "poor" ? "very-low" : "medium"
+                parameters.encodings[0].priority = profile === "poor" ? "low" : "medium"
             } else {
-                parameters.encodings[0].maxBitrate = profile === "poor" ? 72_000 : 128_000
+                parameters.encodings[0].maxBitrate = profile === "poor" ? 96_000 : profile === "good" ? 160_000 : 128_000
                 parameters.encodings[0].priority = "high"
             }
             void sender.setParameters(parameters).catch(() => undefined)
@@ -285,7 +282,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         const currentOrder = NETWORK_PROFILE_ORDER.indexOf(currentProfile)
         const nextOrder = NETWORK_PROFILE_ORDER.indexOf(profile)
         const isDowngrade = nextOrder < currentOrder
-        const requiredHits = isDowngrade ? 2 : 3
+        const requiredHits = isDowngrade ? 3 : 2
         if (stableCandidate.hits < requiredHits) return
 
         peerNetworkProfileRef.current.set(remoteUser, profile)
@@ -1033,7 +1030,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         stream.getVideoTracks().forEach((track) => {
             track.contentHint = VIDEO_TRACK_HINT[mode]
             void track.applyConstraints({
-                frameRate: mode === "camera" ? { ideal: 24, max: 30 } : { ideal: 20, max: 30 },
+                frameRate: { ideal: 30, max: 30 }
             }).catch(() => undefined)
             track.addEventListener("ended", stopScreenShare)
         })
