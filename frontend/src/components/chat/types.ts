@@ -31,6 +31,14 @@ export interface ChatMessage {
     network_status?: "good" | "medium" | "poor"
     audio_bitrate_kbps?: number
     quality_limitation_reason?: string
+    target_bitrate_kbps?: number
+    frame_drop_pct?: number
+    packets_sent?: number
+    retransmitted_packets_sent?: number
+    encoder_implementation?: string
+    avg_encode_time_ms?: number
+    freeze_count?: number
+    total_freezes_duration_ms?: number
     sdp?: string
     candidate?: string
     sdp_mid?: string
@@ -131,31 +139,15 @@ export interface StreamStats {
     networkQuality: "good" | "medium" | "poor"
     audioBitrateKbps: number
     qualityLimitationReason: string
+    targetBitrateKbps: number
+    frameDropPct: number
+    packetsSent: number
+    retransmittedPackets: number
+    encoderImplementation: string
+    encodeMs: number
+    freezeCount: number
+    totalFreezesDurationMs: number
     timestamp: string
-}
-
-export interface ConnectionDiagnostics {
-    route: "p2p" | "turn-relay" | "unknown"
-    protocol: "udp" | "tcp" | "tls" | "unknown"
-    iceState: RTCIceConnectionState
-    connectionState: RTCPeerConnectionState
-    rttMs: number
-    availableOutgoingKbps: number
-    localCandidate: {
-        candidateType: string
-        protocol: "udp" | "tcp" | "tls" | "unknown"
-        address: string
-        port: number
-        networkType: string
-    } | null
-    remoteCandidate: {
-        candidateType: string
-        protocol: "udp" | "tcp" | "tls" | "unknown"
-        address: string
-        port: number
-        networkType: string
-    } | null
-    lastUpdatedAt: string
 }
 
 export interface RoomMeta {

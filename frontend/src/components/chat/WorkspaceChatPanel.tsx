@@ -328,6 +328,9 @@ export const WorkspaceChatPanel = ({
                         <th>UpLink</th>
                         <th>Lokal Aday</th>
                         <th>Uzak Aday</th>
+                        <th>Yerel Ağ</th>
+                        <th>Uzak Ağ</th>
+                        <th>Bağlantı</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -341,6 +344,9 @@ export const WorkspaceChatPanel = ({
                           <td>{diagnostics.availableOutgoingKbps.toFixed(0)} kbps</td>
                           <td>{diagnostics.localCandidate ? `${diagnostics.localCandidate.candidateType}/${diagnostics.localCandidate.protocol}` : "-"}</td>
                           <td>{diagnostics.remoteCandidate ? `${diagnostics.remoteCandidate.candidateType}/${diagnostics.remoteCandidate.protocol}` : "-"}</td>
+                          <td>{diagnostics.localCandidate?.networkType ?? "-"}</td>
+                          <td>{diagnostics.remoteCandidate?.networkType ?? "-"}</td>
+                          <td>{diagnostics.connectionState}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -369,6 +375,12 @@ export const WorkspaceChatPanel = ({
                         <th>Sebep</th>
                         <th>Çözünürlük</th>
                         <th>Kalite</th>
+                        <th>Hedef Bitrate</th>
+                        <th>Frame Drop</th>
+                        <th>Kodlayıcı</th>
+                        <th>Encode</th>
+                        <th>Retransmit</th>
+                        <th>Freeze</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -385,6 +397,12 @@ export const WorkspaceChatPanel = ({
                           <td>{stats.qualityLimitationReason}</td>
                           <td>{stats.width > 0 && stats.height > 0 ? `${stats.width}x${stats.height}` : "-"}</td>
                           <td>{stats.networkQuality}</td>
+                          <td>{stats.targetBitrateKbps.toFixed(0)} kbps</td>
+                          <td>{stats.frameDropPct.toFixed(1)}%</td>
+                          <td>{stats.encoderImplementation}</td>
+                          <td>{stats.encodeMs.toFixed(2)} ms</td>
+                          <td>{stats.retransmittedPackets}/{stats.packetsSent}</td>
+                          <td>{stats.freezeCount} / {stats.totalFreezesDurationMs.toFixed(0)} ms</td>
                         </tr>
                       ))}
                     </tbody>
