@@ -31,6 +31,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const [rooms, setRooms] = useState<string[]>([])
     const [activeRoom, setActiveRoom] = useState("")
+    const [pendingRoom, setPendingRoom] = useState("")
     const [newRoom, setNewRoom] = useState("")
     const [friends, setFriends] = useState<Friend[]>([])
     const [activeDirectFriend, setActiveDirectFriend] = useState("")
@@ -648,7 +649,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                     if (payload.type === "rooms") {
                         const data = payload as RoomsPayload
                         setRooms(data.rooms)
-                        setActiveRoom((prev) => prev || data.rooms[0] || "")
+                        setPendingRoom((prev) => prev || data.rooms[0] || "")
                         joinedRoomsRef.current = new Set(data.rooms)
                         setRoomMeta((prev) => Object.fromEntries(Object.entries(prev).filter(([roomId]) => data.rooms.includes(roomId))))
                         setScreenSharersByRoom((prev) => Object.fromEntries(Object.entries(prev).filter(([roomId]) => data.rooms.includes(roomId))))
@@ -1036,17 +1037,23 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const handleSelectRoom = (roomName: string) => {
         setActiveDirectFriend("")
-        setActiveRoom(roomName)
+        setPendingRoom(roomName)
         setUnreadCountByRoom((prev) => ({ ...prev, [roomName]: 0 }))
-        if (!joinedRoomsRef.current.has(roomName)) {
-            send({ type: "join_room", room_id: roomName })
-            joinedRoomsRef.current.add(roomName)
-        }
+    }
 
+    const handleJoinSelectedRoom = () => {
+        if (!pendingRoom) return
+        setActiveDirectFriend("")
+        setActiveRoom(pendingRoom)
+        if (!joinedRoomsRef.current.has(pendingRoom)) {
+            send({ type: "join_room", room_id: pendingRoom })
+            joinedRoomsRef.current.add(pendingRoom)
+        }
     }
 
     const handleSelectDirectFriend = (friendUsername: string) => {
         setActiveRoom("")
+        setPendingRoom("")
         setActiveDirectFriend(friendUsername)
     }
 
@@ -1360,6 +1367,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             username,
             rooms,
             activeRoom,
+            pendingRoom,
             activeDirectFriend,
             newRoom,
             friends,
@@ -1399,6 +1407,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             setMessageText,
             handleCreateRoom,
             handleSelectRoom,
+            handleJoinSelectedRoom,
             handleSelectDirectFriend,
             setSelectedScreenUser,
             handleAddFriend,

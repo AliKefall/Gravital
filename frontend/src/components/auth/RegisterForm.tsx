@@ -13,6 +13,7 @@ type RegisterFormErrors = {
 
 interface RegisterFormProps {
   onSuccess?: (username: string) => void
+  language: "en" | "tr"
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -53,7 +54,8 @@ const validate = (data: RegisterFormData): RegisterFormErrors => {
   return errors
 }
 
-export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
+export const RegisterForm = ({ onSuccess, language }: RegisterFormProps) => {
+  const isEnglish = language === "en"
   const [formData, setFormData] = useState<RegisterFormData>({
     email: "",
     username: "",
@@ -115,8 +117,8 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
 
   return (
     <form className="auth-form" onSubmit={onSubmit} noValidate>
-      <h2>Create Account</h2>
-      <p className="subtitle">Join the chat workspace with a new account.</p>
+      <h2>{isEnglish ? "Create Account" : "Hesap Oluştur"}</h2>
+      <p className="subtitle">{isEnglish ? "Join the chat workspace with a new account." : "Yeni bir hesapla sohbete katılın."}</p>
 
       <label htmlFor="register-email">Email</label>
       <input
@@ -131,7 +133,7 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
       />
       {errors.email ? <small id="email-error" className="error">{errors.email}</small> : null}
 
-      <label htmlFor="register-username">Username</label>
+      <label htmlFor="register-username">{isEnglish ? "Username" : "Kullanıcı adı"}</label>
       <input
         id="register-username"
         name="username"
@@ -144,7 +146,7 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
       />
       {errors.username ? <small id="username-error" className="error">{errors.username}</small> : null}
 
-      <label htmlFor="register-password">Password</label>
+      <label htmlFor="register-password">{isEnglish ? "Password" : "Şifre"}</label>
       <div className="password-input-row">
         <input
           id="register-password"
@@ -176,7 +178,7 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
       {errors.password ? <small id="password-error" className="error">{errors.password}</small> : null}
 
       <button type="submit" disabled={isSubmitting || !isFormValid}>
-        {isSubmitting ? "Registering..." : "Register"}
+        {isSubmitting ? (isEnglish ? "Registering..." : "Kayıt oluşturuluyor...") : (isEnglish ? "Register" : "Kayıt Ol")}
       </button>
 
       {serverError ? <div className="alert error">{serverError}</div> : null}

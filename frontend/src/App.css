@@ -964,3 +964,104 @@ button:disabled {
 .audio-control-card input[type="range"] {
   padding: 0;
 }
+
+:root {
+  --text-main: #000000;
+  --bg-main: #f2e8da;
+  --bg-panel: #fff9f0;
+  --bg-soft: #f7efe4;
+  --border-main: rgba(0, 0, 0, 0.18);
+  --accent-main: #8e6140;
+}
+
+:root[data-theme="dark"] {
+  --text-main: #000000;
+  --bg-main: #3b332c;
+  --bg-panel: #c8b6a2;
+  --bg-soft: #d5c4b1;
+  --border-main: rgba(0, 0, 0, 0.28);
+  --accent-main: #5d3f29;
+}
+
+body,
+.sidebar,
+.chat-panel,
+.auth-card,
+.message-list,
+.screen-share-area,
+.audio-settings-panel,
+.room-item,
+.friend-list li,
+.request-row,
+.message-item,
+label,
+.subtitle,
+.panel-header p,
+.message-item p,
+.room-members-inline,
+.chat-header p,
+.chat-kpi-row span,
+.message-toolbar span,
+.message-empty-state,
+.composer-hint,
+.message-link,
+.audio-settings-panel p,
+.screen-share-header p,
+.screen-share-users li,
+.screen-share-stats p {
+  color: var(--text-main) !important;
+}
+
+body {
+  background: var(--bg-main) !important;
+}
+
+.sidebar,
+.chat-panel,
+.auth-card,
+.message-list,
+.screen-share-area,
+.audio-settings-panel,
+.room-list,
+.friend-list {
+  background: var(--bg-panel) !important;
+  border-color: var(--border-main) !important;
+}
+
+.app-float-controls {
+  position: fixed;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 120;
+  display: flex;
+  gap: 0.35rem;
+}
+
+.control-chip {
+  border: 1px solid var(--border-main);
+  background: rgba(255, 255, 255, 0.65);
+  color: #000;
+  border-radius: 999px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.join-room-button {
+  width: 100%;
+}
+
+.forgot-page {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.modern-audio-grid .audio-control-card {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(245, 235, 225, 0.92));
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+.audio-settings-panel.compact-audio {
+  border-top: 1px solid var(--border-main);
+}

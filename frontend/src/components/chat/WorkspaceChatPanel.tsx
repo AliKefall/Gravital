@@ -47,6 +47,7 @@ interface WorkspaceChatPanelProps {
   onUploadAttachment: (event: ChangeEvent<HTMLInputElement>) => Promise<void>
   onSelectedScreenUser: (username: string | null) => void
   onLogout: () => Promise<void>
+  language: "en" | "tr"
 }
 
 export const WorkspaceChatPanel = ({
@@ -91,7 +92,9 @@ export const WorkspaceChatPanel = ({
   onUploadAttachment,
   onSelectedScreenUser,
   onLogout,
+  language,
 }: WorkspaceChatPanelProps) => {
+  const isEnglish = language === "en"
   const [activeTab, setActiveTab] = useState<"chat" | "audio">("chat")
   const [messageFilter, setMessageFilter] = useState("")
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([])
@@ -187,19 +190,19 @@ export const WorkspaceChatPanel = ({
           </button>
           <button className={`secondary ${activeTab === "audio" ? "active-tab" : ""}`} onClick={() => setActiveTab("audio")} title="Audio settings">
             <AppIcon name="audio" />
-            <span>Audio</span>
+            <span>{isEnglish ? "Audio" : "Ses"}</span>
           </button>
           <button className="secondary" onClick={onToggleVoice} disabled={status !== "online" || !activeRoom || isJoiningVoice}>
             <AppIcon name="voice" />
-            <span>{isJoiningVoice ? "Connecting..." : voiceConnected ? "Leave Voice" : "Join Voice"}</span>
+            <span>{isJoiningVoice ? (isEnglish ? "Connecting..." : "Bağlanıyor...") : voiceConnected ? (isEnglish ? "Leave Voice" : "Sesten Ayrıl") : (isEnglish ? "Join Voice" : "Sese Katıl")}</span>
           </button>
           <button className="secondary" onClick={onToggleMic} disabled={status !== "online" || !activeRoom || !voiceConnected}>
             <AppIcon name="mic" />
-            <span>{micMuted ? "Unmute Mic" : "Mute Mic"}</span>
+            <span>{micMuted ? (isEnglish ? "Unmute Mic" : "Mikrofonu Aç") : (isEnglish ? "Mute Mic" : "Mikrofonu Kapat")}</span>
           </button>
           <button className="secondary" onClick={onToggleOutput} disabled={status !== "online" || !activeRoom || !voiceConnected}>
             <AppIcon name="speaker" />
-            <span>{outputMuted ? "Unmute Output" : "Mute Output"}</span>
+            <span>{outputMuted ? (isEnglish ? "Unmute Output" : "Sesi Aç") : (isEnglish ? "Mute Output" : "Sesi Kapat")}</span>
           </button>
           <button className="secondary" onClick={onToggleScreenShare} disabled={status !== "online" || !activeRoom || !voiceConnected}>
             <AppIcon name="screen" />
@@ -466,7 +469,7 @@ export const WorkspaceChatPanel = ({
             />
             <button onClick={onSendMessage} disabled={status !== "online" || (!activeRoom && !activeDirectFriend)}>
               <AppIcon name="send" />
-              <span>Send</span>
+              <span>{isEnglish ? "Send" : "Gönder"}</span>
             </button>
             <label className="upload-button">
               <AppIcon name="file" />
@@ -484,10 +487,10 @@ export const WorkspaceChatPanel = ({
         </section>
       ) : (
         <section className="audio-settings-panel compact-audio">
-          <h3>Audio Settings</h3>
-          <p>Microphone/speaker selection and volume levels are stored here (reset on page refresh).</p>
+          <h3>{isEnglish ? "Voice & Audio Settings" : "Ses Ayarları"}</h3>
+          <p>{isEnglish ? "Manage your microphone, speaker and levels in a cleaner layout." : "Mikrofon, hoparlör ve seviye ayarlarınızı burada yönetin."}</p>
           <label>
-            Select Microphone
+            {isEnglish ? "Microphone" : "Mikrofon"}
             <select value={selectedInputId} onChange={(event) => setSelectedInputId(event.target.value)}>
               {audioInputs.length === 0 ? (
                 <option value="">Default microphone</option>
@@ -498,7 +501,7 @@ export const WorkspaceChatPanel = ({
           </label>
 
           <label>
-            Select Headphones/Speaker
+            {isEnglish ? "Speaker / Headphones" : "Hoparlör / Kulaklık"}
             <select value={selectedOutputId} onChange={(event) => setSelectedOutputId(event.target.value)}>
               {audioOutputs.length === 0 ? (
                 <option value="">Default output</option>
@@ -508,19 +511,19 @@ export const WorkspaceChatPanel = ({
             </select>
           </label>
 
-          <div className="audio-grid">
+          <div className="audio-grid modern-audio-grid">
             <article className="audio-control-card">
-              <strong>Output Volume</strong>
+              <strong>{isEnglish ? "Output Volume" : "Çıkış Sesi"}</strong>
               <span>{outputVolume}%</span>
               <input type="range" min={0} max={100} value={outputVolume} onChange={(event) => onOutputVolumeChange(Number(event.target.value))} />
             </article>
             <article className="audio-control-card">
-              <strong>Mic Volume</strong>
+              <strong>{isEnglish ? "Mic Volume" : "Mikrofon Seviyesi"}</strong>
               <span>{micVolume}%</span>
               <input type="range" min={0} max={100} value={micVolume} onChange={(event) => onMicVolumeChange(Number(event.target.value))} />
             </article>
             <article className="audio-control-card" style={{ gridColumn: "1 / -1" }}>
-              <strong>Noise Gate</strong>
+              <strong>{isEnglish ? "Noise Gate" : "Gürültü Eşiği"}</strong>
               <span>{noiseGateDb} dB</span>
               <input type="range" min={-80} max={0} value={noiseGateDb} onChange={(event) => onNoiseGateDbChange(Number(event.target.value))} />
             </article>
@@ -529,11 +532,11 @@ export const WorkspaceChatPanel = ({
           <div className="audio-toggle-row">
             <button className="secondary" onClick={onToggleMic} disabled={status !== "online" || !activeRoom || !voiceConnected}>
               <AppIcon name="mic" />
-              <span>{micMuted ? "Unmute Mic" : "Mute Mic"}</span>
+              <span>{micMuted ? (isEnglish ? "Unmute Mic" : "Mikrofonu Aç") : (isEnglish ? "Mute Mic" : "Mikrofonu Kapat")}</span>
             </button>
             <button className="secondary" onClick={onToggleOutput} disabled={status !== "online" || !activeRoom || !voiceConnected}>
               <AppIcon name="speaker" />
-              <span>{outputMuted ? "Unmute Output" : "Mute Output"}</span>
+              <span>{outputMuted ? (isEnglish ? "Unmute Output" : "Sesi Aç") : (isEnglish ? "Mute Output" : "Sesi Kapat")}</span>
             </button>
           </div>
         </section>

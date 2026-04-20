@@ -5,9 +5,23 @@ import { AuthPage } from "./pages/AuthPage"
 import type { LoginResponse } from "./types/auth"
 import { fetchCurrentUser, refreshSession } from "./api/auth"
 
+export type AppLanguage = "en" | "tr"
+export type AppTheme = "light" | "dark"
+
 function App() {
   const [session, setSession] = useState<LoginResponse | null>(null)
   const [hydrating, setHydrating] = useState(true)
+  const [language, setLanguage] = useState<AppLanguage>(() => (localStorage.getItem("gravital-language") === "tr" ? "tr" : "en"))
+  const [theme, setTheme] = useState<AppTheme>(() => (localStorage.getItem("gravital-theme") === "dark" ? "dark" : "light"))
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme)
+    localStorage.setItem("gravital-theme", theme)
+  }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem("gravital-language", language)
+  }, [language])
 
   useEffect(() => {
     let cancelled = false
@@ -41,24 +55,43 @@ function App() {
       cancelled = true
     }
   }, [])
+
+  const languageLabel = language === "en" ? "TR" : "ENG"
+  const themeLabel = theme === "light" ? "Dark" : "Light"
+
   if (hydrating) {
-    return (<main className="auth-shell">
-      <section className="auth-card auth-loading">
-        <h1>Gravital Chat</h1>
-        <p>Oturum kontrol ediliyor...</p>
-      </section>
-    </main>)
-  }
-  if (!session) {
-    return <AuthPage onLogin={setSession} />
+    return (
+      <main className="auth-shell">
+        <section className="auth-card auth-loading">
+          <h1>Gravital Chat</h1>
+          <p>{language === "en" ? "Checking session..." : "Oturum kontrol ediliyor..."}</p>
+        </section>
+      </main>
+    )
   }
 
   return (
-    <ChatWorkspace
-      username={session.user.username}
-      token={session.access_token}
-      onLogout={() => setSession(null)}
-    />
+    <>
+      <div className="app-float-controls" aria-label="Display and language controls">
+        <button type="button" className="control-chip" onClick={() => setLanguage((prev) => (prev === "en" ? "tr" : "en"))}>
+          {languageLabel}
+        </button>
+        <button type="button" className="control-chip" onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}>
+          {themeLabel}
+        </button>
+      </div>
+
+      {!session ? (
+        <AuthPage onLogin={setSession} language={language} />
+      ) : (
+        <ChatWorkspace
+          username={session.user.username}
+          token={session.access_token}
+          onLogout={() => setSession(null)}
+          language={language}
+        />
+      )}
+    </>
   )
 }
 

@@ -7,6 +7,7 @@ import { WorkspaceSidebar } from "./chat/WorkspaceSidebar"
 
 export const ChatWorkspace = (props: ChatWorkspaceProps) => {
   const { refs, state, actions } = useWorkspaceController(props)
+  const { language } = props
   return (
     <main className="workspace compact-workspace">
 
@@ -34,6 +35,9 @@ export const ChatWorkspace = (props: ChatWorkspaceProps) => {
         onSelectDirectFriend={actions.handleSelectDirectFriend}
         onSelectFriendForRoom={actions.setSelectedFriendForRoom}
         onAddFriendToRoom={actions.handleAddFriendToRoom}
+        pendingRoom={state.pendingRoom}
+        onJoinSelectedRoom={actions.handleJoinSelectedRoom}
+        language={language}
       />
 
       <WorkspaceChatPanel
@@ -79,6 +83,7 @@ export const ChatWorkspace = (props: ChatWorkspaceProps) => {
         onUploadAttachment={actions.handleUploadAttachment}
         onSelectedScreenUser={actions.setSelectedScreenUser}
         onLogout={actions.handleLogout}
+        language={language}
       />
     </main>
   )

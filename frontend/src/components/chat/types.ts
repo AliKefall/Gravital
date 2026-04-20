@@ -3,6 +3,7 @@ export interface ChatWorkspaceProps {
     username: string
     token: string
     onLogout: () => void
+    language: "en" | "tr"
 }
 
 export interface ChatMessage {
