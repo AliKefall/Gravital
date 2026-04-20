@@ -2,6 +2,17 @@ const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "")
 
 const isLocalHost = (hostname: string) => hostname === "localhost" || hostname === "127.0.0.1"
 
+const buildApiSubdomainUrl = (location: Location): string => {
+  const hostname = location.hostname
+  if (hostname.startsWith("api.")) {
+    return trimTrailingSlash(location.origin)
+  }
+
+  const apiHost = `api.${hostname}`
+  const port = location.port ? `:${location.port}` : ""
+  return `${location.protocol}//${apiHost}${port}`
+}
+
 export const getApiBaseUrl = (): string => {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL
   if (configuredBaseUrl) {
@@ -13,7 +24,7 @@ export const getApiBaseUrl = (): string => {
       return "http://localhost:8080"
     }
 
-    return trimTrailingSlash(window.location.origin)
+    return buildApiSubdomainUrl(window.location)
   }
 
   return "http://localhost:8080"
