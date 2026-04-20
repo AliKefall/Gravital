@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ChangeEvent, type RefObject } from "react"
 import { MessageContent } from "./MessageContent"
 import type { ChatMessage, ConnectionDiagnostics, RemoteAudio, RemoteScreen, RoomMeta, StreamStats } from "./types"
+import { AppIcon } from "../common/AppIcon"
 
 
 interface WorkspaceChatPanelProps {
@@ -180,24 +181,33 @@ export const WorkspaceChatPanel = ({
         </div>
 
         <div className="header-actions compact-actions">
-          <button className={`secondary ${activeTab === "chat" ? "active-tab" : ""}`} onClick={() => setActiveTab("chat")}>Chat</button>
+          <button className={`secondary icon-button ${activeTab === "chat" ? "active-tab" : ""}`} onClick={() => setActiveTab("chat")}>
+            <AppIcon name="chat" />
+            <span>Chat</span>
+          </button>
           <button className={`secondary ${activeTab === "audio" ? "active-tab" : ""}`} onClick={() => setActiveTab("audio")} title="Audio settings">
-            Audio
+            <AppIcon name="audio" />
+            <span>Audio</span>
           </button>
           <button className="secondary" onClick={onToggleVoice} disabled={status !== "online" || !activeRoom || isJoiningVoice}>
-            {isJoiningVoice ? "Connecting..." : voiceConnected ? "Leave Voice" : "Join Voice"}
+            <AppIcon name="voice" />
+            <span>{isJoiningVoice ? "Connecting..." : voiceConnected ? "Leave Voice" : "Join Voice"}</span>
           </button>
           <button className="secondary" onClick={onToggleMic} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-            {micMuted ? "Unmute Mic" : "Mute Mic"}
+            <AppIcon name="mic" />
+            <span>{micMuted ? "Unmute Mic" : "Mute Mic"}</span>
           </button>
           <button className="secondary" onClick={onToggleOutput} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-            {outputMuted ? "Unmute Output" : "Mute Output"}
+            <AppIcon name="speaker" />
+            <span>{outputMuted ? "Unmute Output" : "Mute Output"}</span>
           </button>
           <button className="secondary" onClick={onToggleScreenShare} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-            {screenSharing ? "Stop Sharing" : "Share Screen"}
+            <AppIcon name="screen" />
+            <span>{screenSharing ? "Stop Sharing" : "Share Screen"}</span>
           </button>
           <button className="secondary" onClick={onToggleCameraShare} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-            {cameraSharing ? "Stop Camera" : "Share Camera"}
+            <AppIcon name="camera" />
+            <span>{cameraSharing ? "Stop Camera" : "Share Camera"}</span>
           </button>
           <button
             className="secondary"
@@ -205,7 +215,8 @@ export const WorkspaceChatPanel = ({
             disabled={status !== "online" || !activeRoom || isActiveRoomOwner}
             title={!activeRoom ? "Select a room first" : isActiveRoomOwner ? "Room owner cannot leave room" : undefined}
           >
-            Leave Room
+            <AppIcon name="leave" />
+            <span>Leave Room</span>
           </button>
           <button
             className="secondary"
@@ -213,9 +224,13 @@ export const WorkspaceChatPanel = ({
             disabled={!isActiveRoomOwner || status !== "online"}
             title={!activeRoom ? "Select a room first" : !isActiveRoomOwner ? "Only the room owner can close the room" : undefined}
           >
-            Close Room
+            <AppIcon name="trash" />
+            <span>Close Room</span>
           </button>
-          <button className="danger" onClick={() => void onLogout()}>Logout</button>
+          <button className="danger" onClick={() => void onLogout()}>
+            <AppIcon name="logout" />
+            <span>Logout</span>
+          </button>
         </div>
       </header>
 
@@ -242,7 +257,8 @@ export const WorkspaceChatPanel = ({
               <p>{isCurrentUserSharingScreen ? "You are sharing your screen now." : "Screen share is off."}</p>
             </header>
             <button className="secondary metrics-toggle" onClick={() => setShowLiveMetrics((prev) => !prev)}>
-              {showLiveMetrics ? "Hide live metrics" : "Show live metrics"}
+              <AppIcon name="search" />
+              <span>{showLiveMetrics ? "Hide live metrics" : "Show live metrics"}</span>
             </button>
             <div className="screen-share-stats">
               <p><strong>Voice participants:</strong> {remoteAudios.length}</p>
@@ -284,7 +300,8 @@ export const WorkspaceChatPanel = ({
                   <div className="screen-card-header">
                     <h4>@{remoteScreen.username}</h4>
                     <button className="secondary" onClick={() => onSelectedScreenUser(remoteScreen.username)}>
-                      Resize
+                      <AppIcon name="screen" />
+                      <span>Resize</span>
                     </button>
                   </div>
                   <video
@@ -423,6 +440,7 @@ export const WorkspaceChatPanel = ({
               placeholder="Search messages (user or content)"
               aria-label="Search messages"
             />
+            <AppIcon name="search" className="toolbar-icon" />
             <span>{filteredMessages.length} results</span>
           </div>
           <div className="message-list" ref={messageListRef}>
@@ -446,9 +464,13 @@ export const WorkspaceChatPanel = ({
               }}
               placeholder={activeDirectFriend ? `Write a message to @${activeDirectFriend}...` : "Write your message..."}
             />
-            <button onClick={onSendMessage} disabled={status !== "online" || (!activeRoom && !activeDirectFriend)}>Send</button>
+            <button onClick={onSendMessage} disabled={status !== "online" || (!activeRoom && !activeDirectFriend)}>
+              <AppIcon name="send" />
+              <span>Send</span>
+            </button>
             <label className="upload-button">
-              {uploading ? "Uploading..." : "File"}
+              <AppIcon name="file" />
+              <span>{uploading ? "Uploading..." : "File"}</span>
               <input
                 type="file"
                 accept="image/*,video/*,application/pdf,text/plain,.rar,application/x-rar-compressed"
@@ -501,10 +523,12 @@ export const WorkspaceChatPanel = ({
 
           <div className="audio-toggle-row">
             <button className="secondary" onClick={onToggleMic} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-              {micMuted ? "Unmute Mic" : "Mute Mic"}
+              <AppIcon name="mic" />
+              <span>{micMuted ? "Unmute Mic" : "Mute Mic"}</span>
             </button>
             <button className="secondary" onClick={onToggleOutput} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-              {outputMuted ? "Unmute Output" : "Mute Output"}
+              <AppIcon name="speaker" />
+              <span>{outputMuted ? "Unmute Output" : "Mute Output"}</span>
             </button>
           </div>
         </section>
@@ -517,8 +541,14 @@ export const WorkspaceChatPanel = ({
               <h3>@{selectedScreen.username} - Fullscreen view</h3>
 
               <div className="modal-actions">
-                <button className="secondary" onClick={() => void requestFullscreen()}>Video Mode</button>
-                <button className="danger" onClick={() => onSelectedScreenUser(null)}>Close</button>
+                <button className="secondary" onClick={() => void requestFullscreen()}>
+                  <AppIcon name="screen" />
+                  <span>Video Mode</span>
+                </button>
+                <button className="danger" onClick={() => onSelectedScreenUser(null)}>
+                  <AppIcon name="close" />
+                  <span>Close</span>
+                </button>
               </div>
             </header>
             <video

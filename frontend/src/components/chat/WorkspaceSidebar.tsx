@@ -1,5 +1,6 @@
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
+import { AppIcon } from "../common/AppIcon"
 import type { Friend } from "./types"
 
 interface WorkspaceSidebarProps {
@@ -54,50 +55,40 @@ export const WorkspaceSidebar = ({
   onAddFriendToRoom,
 }: WorkspaceSidebarProps) => {
   const onlineFriends = useMemo(() => friends.filter((friend) => friend.online).length, [friends])
-  const [modal, setModal] = useState<null | "room" | "friend">(null)
 
   return (
     <aside className="sidebar">
       <header className="panel-header">
-        <h2>Rooms</h2>
+        <h2>Rooms & Friends</h2>
         <p>Welcome, @{username}</p>
       </header>
 
       <div className="sidebar-actions-grid">
         <article className="sidebar-action-card">
           <strong>Create room</strong>
-          <button onClick={() => setModal("room")} disabled={status !== "online"}>Open popup</button>
-        </article>
-
-        {modal && (
-          <div className="action-modal-overlay" role="dialog" aria-modal="true">
-            <div className="action-modal-content">
-              <h3>{modal === "room" ? "Create Room" : "Add Friend"}</h3>
-              <input
-                value={modal === "room" ? newRoom : newFriend}
-                onChange={(event) => (modal === "room" ? onNewRoomChange(event.target.value) : onNewFriendChange(event.target.value))}
-                placeholder={modal === "room" ? "Room name" : "Friend username"}
-                autoFocus
-              />
-              <div className="action-modal-buttons">
-                <button
-                  onClick={() => {
-                    if (modal === "room") onCreateRoom()
-                    else onAddFriend()
-                    setModal(null)
-                  }}
-                  disabled={status !== "online" || !(modal === "room" ? newRoom.trim() : newFriend.trim())}
-                >
-                  Create
-                </button>
-                <button className="secondary" onClick={() => setModal(null)}>Cancel</button>
-              </div>
-            </div>
+          <div className="inline-form compact-inline">
+            <input
+              value={newRoom}
+              onChange={(event) => onNewRoomChange(event.target.value)}
+              placeholder="Room name"
+            />
+            <button onClick={onCreateRoom} disabled={status !== "online" || !newRoom.trim()} aria-label="Create room">
+              <AppIcon name="plus" />
+            </button>
           </div>
-        )}
+        </article>
         <article className="sidebar-action-card">
           <strong>Add friend</strong>
-          <button onClick={() => setModal("friend")} disabled={status !== "online"}>Open popup</button>
+          <div className="inline-form compact-inline">
+            <input
+              value={newFriend}
+              onChange={(event) => onNewFriendChange(event.target.value)}
+              placeholder="Friend username"
+            />
+            <button onClick={onAddFriend} disabled={status !== "online" || !newFriend.trim()} aria-label="Add friend">
+              <AppIcon name="userPlus" />
+            </button>
+          </div>
         </article>
 
         <article className="sidebar-action-card">
@@ -111,13 +102,33 @@ export const WorkspaceSidebar = ({
                 </option>
               ))}
             </select>
-            <button onClick={onAddFriendToRoom} disabled={!activeRoom || !selectedFriendForRoom || status !== "online"}>
-              Invite
+            <button onClick={onAddFriendToRoom} disabled={!activeRoom || !selectedFriendForRoom || status !== "online"} aria-label="Invite friend to room">
+              <AppIcon name="invite" />
             </button>
           </div>
           {!activeRoom && <small>Note: Select a room before sending an invite.</small>}
         </article>
       </div>
+
+      <header className="panel-header friends">
+        <h3>Friends</h3>
+        <p>{friends.length} added • {onlineFriends} online</p>
+      </header>
+
+      <ul className="friend-list">
+        {friends.length === 0 && <li className="empty-state">No friends added yet</li>}
+        {friends.map((friend) => (
+          <li
+            key={friend.username}
+            className={activeDirectFriend === friend.username ? "active-direct" : ""}
+            onClick={() => onSelectDirectFriend(friend.username)}
+          >
+            <span className="avatar">{friend.username.slice(0, 2).toUpperCase()}</span>
+            <span>@{friend.username}</span>
+            <span className={`presence ${friend.online ? "online" : "offline"}`}>{friend.online ? "online" : "offline"}</span>
+          </li>
+        ))}
+      </ul>
 
       <ul className="room-list">
         {rooms.length === 0 && <li className="empty-state">No rooms yet</li>}
@@ -147,8 +158,12 @@ export const WorkspaceSidebar = ({
           <li key={`incoming-${requester}`} className="request-row">
             <span>@{requester}</span>
             <div className="request-actions">
-              <button onClick={() => onAcceptFriendRequest(requester)}>Accept</button>
-              <button className="secondary" onClick={() => onRejectFriendRequest(requester)}>Reject</button>
+              <button onClick={() => onAcceptFriendRequest(requester)} aria-label={`Accept @${requester}`}>
+                <AppIcon name="check" />
+              </button>
+              <button className="secondary" onClick={() => onRejectFriendRequest(requester)} aria-label={`Reject @${requester}`}>
+                <AppIcon name="close" />
+              </button>
             </div>
           </li>
         ))}
@@ -158,80 +173,6 @@ export const WorkspaceSidebar = ({
           </li>
         ))}
       </ul>
-
-      <header className="panel-header friends">
-        <h3>Friends</h3>
-        <p>{friends.length} added • {onlineFriends} online</p>
-      </header>
-
-      <ul className="friend-list">
-        {friends.length === 0 && <li className="empty-state">No friends added yet</li>}
-        {friends.map((friend) => (
-          <li
-            key={friend.username}
-            className={activeDirectFriend === friend.username ? "active-direct" : ""}
-            onClick={() => onSelectDirectFriend(friend.username)}
-
-          >
-            <span className="avatar">{friend.username.slice(0, 2).toUpperCase()}</span>
-            <span>@{friend.username}</span>
-            <span className={`presence ${friend.online ? "online" : "offline"}`}>{friend.online ? "online" : "offline"}</span>
-          </li>
-        ))}
-      </ul>
-
-      {modal && (
-        <div className="action-modal-overlay" role="dialog" aria-modal="true">
-          <div className="action-modal-content">
-            <h3>{modal === "room" ? "Create Room" : "Add Friend"}</h3>
-            <input
-              value={modal === "room" ? newRoom : newFriend}
-              onChange={(event) => (modal === "room" ? onNewRoomChange(event.target.value) : onNewFriendChange(event.target.value))}
-              placeholder={modal === "room" ? "Room name" : "Friend username"}
-              autoFocus
-            />
-            <div className="action-modal-buttons">
-              <button
-                onClick={() => {
-                  if (modal === "room") onCreateRoom()
-                  else onAddFriend()
-                  setModal(null)
-                }}
-                disabled={status !== "online" || !(modal === "room" ? newRoom.trim() : newFriend.trim())}
-              >
-                Create
-              </button>
-              <button className="secondary" onClick={() => setModal(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {modal && (
-        <div className="action-modal-overlay" role="dialog" aria-modal="true">
-          <div className="action-modal-content">
-            <h3>{modal === "room" ? "Create Room" : "Add Friend"}</h3>
-            <input
-              value={modal === "room" ? newRoom : newFriend}
-              onChange={(event) => (modal === "room" ? onNewRoomChange(event.target.value) : onNewFriendChange(event.target.value))}
-              placeholder={modal === "room" ? "Room name" : "Friend username"}
-              autoFocus
-            />
-            <div className="action-modal-buttons">
-              <button
-                onClick={() => {
-                  if (modal === "room") onCreateRoom()
-                  else onAddFriend()
-                  setModal(null)
-                }}
-                disabled={status !== "online" || !(modal === "room" ? newRoom.trim() : newFriend.trim())}
-              >
-                Create
-              </button>
-              <button className="secondary" onClick={() => setModal(null)}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
     </aside>
   )
 }

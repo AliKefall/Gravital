@@ -1,6 +1,7 @@
 import { useMemo, useState, type ChangeEvent } from "react"
 import { registerUser } from "../../api/auth"
 import type { RegisterRequest } from "../../types/auth"
+import { AppIcon } from "../common/AppIcon"
 
 type RegisterFormData = RegisterRequest
 
@@ -62,11 +63,22 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const isFormValid = useMemo(() => {
     const nextErrors = validate(formData)
     return Object.keys(nextErrors).length === 0
   }, [formData])
+
+  const passwordChecks = useMemo(() => {
+    const password = formData.password
+    return {
+      length: password.length >= 8 && password.length <= 128,
+      upper: /[A-Z]/.test(password),
+      lower: /[a-z]/.test(password),
+      digit: /\d/.test(password),
+    }
+  }, [formData.password])
 
   const onSubmit = async (event: ChangeEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -133,16 +145,32 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
       {errors.username ? <small id="username-error" className="error">{errors.username}</small> : null}
 
       <label htmlFor="register-password">Password</label>
-      <input
-        id="register-password"
-        name="password"
-        type="password"
-        value={formData.password}
-        onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
-        aria-invalid={Boolean(errors.password)}
-        aria-describedby={errors.password ? "password-error" : undefined}
-        placeholder="••••••••"
-      />
+      <div className="password-input-row">
+        <input
+          id="register-password"
+          name="password"
+          type={showPassword ? "text" : "password"}
+          value={formData.password}
+          onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
+          aria-invalid={Boolean(errors.password)}
+          aria-describedby={errors.password ? "password-error" : "password-guideline"}
+          placeholder="••••••••"
+        />
+        <button
+          type="button"
+          className="password-toggle-button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          <AppIcon name={showPassword ? "eyeOff" : "eye"} />
+        </button>
+      </div>
+      <ul id="password-guideline" className="password-guideline">
+        <li className={passwordChecks.length ? "pass" : ""}>8-128 karakter</li>
+        <li className={passwordChecks.upper ? "pass" : ""}>En az bir büyük harf</li>
+        <li className={passwordChecks.lower ? "pass" : ""}>En az bir küçük harf</li>
+        <li className={passwordChecks.digit ? "pass" : ""}>En az bir sayı</li>
+      </ul>
       {errors.password ? <small id="password-error" className="error">{errors.password}</small> : null}
 
       <button type="submit" disabled={isSubmitting || !isFormValid}>
