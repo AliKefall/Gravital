@@ -80,7 +80,7 @@ select {
   border-radius: 9px;
   padding: 0.52rem 0.72rem;
   font-weight: 600;
-  color: #2c1f16111;
+  color: #2c1f16;
   background: #a77a56;
   cursor: pointer;
   transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
