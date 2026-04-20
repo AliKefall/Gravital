@@ -58,7 +58,6 @@ func isAllowedAttachmentMIME(mimeType string) bool {
 		"text/plain":                   true,
 		"application/x-rar-compressed": true,
 		"application/vnd.rar":          true,
-		"application/octet-stream":     true,
 	}
 	return allowedDocs[mimeType]
 }
@@ -101,6 +100,16 @@ func mimeFromExtension(filename string) string {
 		return "application/x-rar-compressed"
 	default:
 		return ""
+	}
+}
+
+func isAllowedAttachmentExtension(filename string) bool {
+	ext := strings.ToLower(strings.TrimSpace(filepath.Ext(filename)))
+	switch ext {
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".mp4", ".m4v", ".webm", ".mov", ".pdf", ".txt", ".rar":
+		return true
+	default:
+		return false
 	}
 }
 
@@ -185,6 +194,11 @@ func (h *Handler) UploadAttachmentHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if !isAllowedAttachmentExtension(header.Filename) {
+		RespondWithError(w, http.StatusBadRequest, "unsupported file extension", nil)
+		return
+	}
+
 	buffer := make([]byte, 512)
 	readBytes, err := file.Read(buffer)
 	if err != nil && err != io.EOF {
@@ -220,9 +234,7 @@ func (h *Handler) UploadAttachmentHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	ext := strings.ToLower(filepath.Ext(header.Filename))
-	if ext == "" {
-		ext = ".bin"
-	}
+
 	storedName := fmt.Sprintf("%s%s", uuid.NewString(), ext)
 	storedPath := filepath.Join(uploadDir, storedName)
 

@@ -127,7 +127,7 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
         onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
         aria-invalid={Boolean(errors.email)}
         aria-describedby={errors.email ? "email-error" : undefined}
-        placeholder="ornek@mail.com"
+        placeholder="name@email.com"
       />
       {errors.email ? <small id="email-error" className="error">{errors.email}</small> : null}
 
@@ -166,10 +166,12 @@ export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
         </button>
       </div>
       <ul id="password-guideline" className="password-guideline">
-        <li className={passwordChecks.length ? "pass" : ""}>8-128 karakter</li>
-        <li className={passwordChecks.upper ? "pass" : ""}>En az bir büyük harf</li>
-        <li className={passwordChecks.lower ? "pass" : ""}>En az bir küçük harf</li>
-        <li className={passwordChecks.digit ? "pass" : ""}>En az bir sayı</li>
+
+        <li className={passwordChecks.length ? "pass" : ""}>8-128 characters</li>
+        <li className={passwordChecks.upper ? "pass" : ""}>At least one uppercase letter</li>
+        <li className={passwordChecks.lower ? "pass" : ""}>At least one lowercase letter</li>
+        <li className={passwordChecks.digit ? "pass" : ""}>At least one number</li>
+
       </ul>
       {errors.password ? <small id="password-error" className="error">{errors.password}</small> : null}
 

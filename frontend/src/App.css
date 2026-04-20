@@ -41,12 +41,12 @@ select {
 
 .auth-card {
   width: min(100%, 430px);
-  background: rgba(27, 23, 20, 0.95);
+  background: linear-gradient(180deg, rgba(244, 233, 216, 0.98), rgba(238, 224, 204, 0.97));
   border: 1px solid rgba(94, 45, 9, 0.35);
   border-radius: 18px;
-  padding: 1rem;
+  padding: 1.15rem;
   backdrop-filter: blur(8px);
-  box-shadow: 0 14px 35px rgba(0, 0, 0, 0.45);
+  box-shadow: 0 14px 35px rgba(63, 38, 20, 0.25);
 }
 
 .auth-loading {
@@ -60,7 +60,7 @@ select {
 
 .auth-header p {
   margin: 0.35rem 0 0.85rem;
-  color: #5e2d09;
+  color: #7a5c45;
 }
 
 .tab-row {
@@ -117,13 +117,13 @@ select {
 
 .subtitle {
   margin: 0 0 0.5rem;
-  color: #5e2d09;
+  color: #7a5c45;
   font-size: 0.85rem;
 }
 
 label {
   font-size: 0.82rem;
-  color: #d5c4b8;
+  color: #6d4f3b;
 }
 
 input,
@@ -133,7 +133,7 @@ select {
   border-radius: 10px;
   padding: 0.55rem 0.65rem;
   color: var(--text-mist);
-  background: rgba(30, 24, 20, 0.9);
+  background: rgba(255, 252, 246, 0.92);
 }
 
 input:focus,

@@ -326,32 +326,32 @@ export const WorkspaceChatPanel = ({
                     <h4>@{member}</h4>
                   </div>
                   <div className="stream-stats-inline">
-                    <span>Yayın aktif, akış bağlanıyor...</span>
+                    <span>Broadcast is active, stream is connecting...</span>
                   </div>
                 </article>
               ))}
             </div>
             {showLiveMetrics && <section className="stream-metrics-panel">
-              <h4>Bağlantı rotası izleme (UDP/TURN/P2P)</h4>
-              <p>Her peer için aktif ICE rotası, protokol (UDP/TCP/TLS) ve relay durumu.</p>
+              <h4>Connection route monitor (UDP/TURN/P2P)</h4>
+              <p>Track active ICE route, protocol (UDP/TCP/TLS), and relay state for each peer.</p>
               {Object.entries(connectionDiagnosticsByUser).length === 0 ? (
-                <p>Henüz bağlantı teşhisi yok. Ses kanalına katılıp bir kullanıcı ile eşleşmeyi bekleyin.</p>
+                <p>No connection diagnostics yet. Join voice and wait to connect with another user.</p>
               ) : (
                 <div className="stream-metrics-table-wrap">
                   <table className="stream-metrics-table">
                     <thead>
                       <tr>
-                        <th>Kullanıcı</th>
-                        <th>Rota</th>
-                        <th>Protokol</th>
+                        <th>User</th>
+                        <th>Route</th>
+                        <th>Protocol</th>
                         <th>ICE</th>
                         <th>RTT</th>
                         <th>UpLink</th>
-                        <th>Lokal Aday</th>
-                        <th>Uzak Aday</th>
-                        <th>Yerel Ağ</th>
-                        <th>Uzak Ağ</th>
-                        <th>Bağlantı</th>
+                        <th>Local Candidate</th>
+                        <th>Remote Candidate</th>
+                        <th>Local Network</th>
+                        <th>Remote Network</th>
+                        <th>Connection</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -376,29 +376,29 @@ export const WorkspaceChatPanel = ({
               )}
             </section>}
             {showLiveMetrics && <section className="stream-metrics-panel">
-              <h4>Canlı yayın metrikleri</h4>
-              <p>Webcam/screen aktarımında gecikme ve bağlantı kalitesini takip edin.</p>
+              <h4>Live streaming metrics</h4>
+              <p>Monitor latency and connection quality for webcam/screen streams.</p>
               {streamStatsRows.length === 0 ? (
-                <p>Henüz yayın metriği yok. Ses kanalına katılıp webcam/screen paylaşımı başlatın.</p>
+                <p>No stream metrics yet. Join voice and start webcam/screen sharing.</p>
               ) : (
                 <div className="stream-metrics-table-wrap">
                   <table className="stream-metrics-table">
                     <thead>
                       <tr>
-                        <th>Kullanıcı</th>
-                        <th>Gecikme</th>
+                        <th>User</th>
+                        <th>Latency</th>
                         <th>FPS</th>
                         <th>Bitrate</th>
                         <th>Audio</th>
-                        <th>Kayıp</th>
+                        <th>Loss</th>
                         <th>Jitter</th>
                         <th>UpLink</th>
-                        <th>Sebep</th>
-                        <th>Çözünürlük</th>
-                        <th>Kalite</th>
-                        <th>Hedef Bitrate</th>
+                        <th>Reason</th>
+                        <th>Resolution</th>
+                        <th>Quality</th>
+                        <th>Target Bitrate</th>
                         <th>Frame Drop</th>
-                        <th>Kodlayıcı</th>
+                        <th>Encoder</th>
                         <th>Encode</th>
                         <th>Retransmit</th>
                         <th>Freeze</th>

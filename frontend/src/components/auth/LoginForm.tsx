@@ -1,6 +1,7 @@
 import { useMemo, useState, type ChangeEvent } from "react"
 import { loginUser } from "../../api/auth"
 import type { LoginRequest, LoginResponse } from "../../types/auth"
+import { AppIcon } from "../common/AppIcon"
 
 type LoginFormErrors = {
   email?: string
@@ -34,6 +35,7 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
   const [errors, setErrors] = useState<LoginFormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
 
   const isValid = useMemo(() => Object.keys(validate(formData)).length === 0, [formData])
 
@@ -72,18 +74,28 @@ export const LoginForm = ({ onSuccess }: LoginFormProps) => {
         type="email"
         value={formData.email}
         onChange={(event) => setFormData((prev) => ({ ...prev, email: event.target.value }))}
-        placeholder="ornek@mail.com"
+        placeholder="name@email.com"
       />
       {errors.email ? <small className="error">{errors.email}</small> : null}
 
       <label htmlFor="login-password">Password</label>
-      <input
-        id="login-password"
-        type="password"
-        value={formData.password}
-        onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
-        placeholder="••••••••"
-      />
+      <div className="password-input-row">
+        <input
+          id="login-password"
+          type={showPassword ? "text" : "password"}
+          value={formData.password}
+          onChange={(event) => setFormData((prev) => ({ ...prev, password: event.target.value }))}
+          placeholder="••••••••"
+        />
+        <button
+          type="button"
+          className="password-toggle-button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          <AppIcon name={showPassword ? "eyeOff" : "eye"} />
+        </button>
+      </div>
       {errors.password ? <small className="error">{errors.password}</small> : null}
 
       <button type="submit" disabled={isSubmitting || !isValid}>

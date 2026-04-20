@@ -51,15 +51,27 @@ func securityHeadersMiddleware(next http.Handler) http.Handler {
 		headers.Set("X-Frame-Options", "DENY")
 		headers.Set("Referrer-Policy", "strict-origin-when-cross-origin")
 		headers.Set("Permissions-Policy", "camera=(), microphone=(self), geolocation=()")
+		// Without these three headers websocker and webrtc connection will be down.
+		// These are necessery for "Secure" connection.
 		headers.Set("Cross-Origin-Resource-Policy", "same-site")
 		headers.Set("Cross-Origin-Opener-Policy", "same-origin")
 		headers.Set("Cross-Origin-Embedder-Policy", "credentialless")
+		//
 		headers.Set("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+		headers.Set("Cache-Control", "no-store")
+		headers.Set("Pragma", "no-cache")
+
+		// This one is mostly for chromium based internet services. ex: Chrome, Opera ...
+		headers.Set(
+			"Content-Security-Policy",
+			"default-src 'self'; base-uri 'self'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data: blob:; media-src 'self' blob:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' ws: wss:;",
+		)
 		next.ServeHTTP(w, r)
 	})
 }
 
 func registerUploadsRoute(r chi.Router) {
+	// When you set a filepath be sure the docker container have the necessery permissions
 	uploadDir := strings.TrimSpace(os.Getenv("UPLOAD_DIR"))
 	if uploadDir == "" {
 		uploadDir = "uploads"
