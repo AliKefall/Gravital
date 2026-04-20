@@ -12,7 +12,10 @@ export const getApiBaseUrl = (): string => {
     if (isLocalHost(window.location.hostname)) {
       return "http://localhost:8080"
     }
+
+    return trimTrailingSlash(window.location.origin)
   }
+
   return "http://localhost:8080"
 }
 

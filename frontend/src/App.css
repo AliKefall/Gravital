@@ -1030,19 +1030,25 @@ body {
 
 .app-float-controls {
   position: fixed;
-  top: 0.75rem;
-  right: 0.75rem;
+  left: 50%;
+  bottom: max(0.75rem, env(safe-area-inset-bottom));
+  transform: translateX(-50%);
   z-index: 120;
   display: flex;
   gap: 0.35rem;
+  padding: 0.3rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.66);
+  border: 1px solid var(--border-main);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.15);
 }
 
 .control-chip {
   border: 1px solid var(--border-main);
-  background: rgba(255, 255, 255, 0.65);
+  background: rgba(255, 255, 255, 0.9);
   color: #000;
   border-radius: 999px;
-  padding: 0.25rem 0.6rem;
+  padding: 0.3rem 0.7rem;
   font-size: 0.75rem;
   cursor: pointer;
 }
@@ -1054,6 +1060,17 @@ body {
 .forgot-page {
   display: grid;
   gap: 0.45rem;
+}
+
+.forgot-page button {
+  width: 100%;
+}
+
+.forgot-page .subtitle,
+.forgot-page label,
+.forgot-page small,
+.forgot-page .error {
+  color: #000 !important;
 }
 
 .modern-audio-grid .audio-control-card {
