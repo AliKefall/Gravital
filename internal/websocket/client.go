@@ -38,8 +38,9 @@ func (c *Client) ReadPump() {
 		var msg Message
 		err := c.Conn.ReadJSON(&msg)
 		if err != nil {
-			log.Println("Read error: ", err)
-			break
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
+				log.Printf("Websocket read error for user= %s: %v", c.Username, err)
+			}
 		}
 		msg.From = c.Username
 		c.Hub.HandleMessage(c, msg)

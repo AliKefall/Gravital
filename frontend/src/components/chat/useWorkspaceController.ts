@@ -1368,6 +1368,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             pendingIncomingRequests,
             pendingOutgoingRequests,
             selectedFriendForRoom,
+            roomMetaByRoom: roomMeta,
             messageText,
             uploading,
             voiceConnected,

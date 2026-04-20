@@ -97,6 +97,7 @@ export const WorkspaceChatPanel = ({
   const [audioOutputs, setAudioOutputs] = useState<MediaDeviceInfo[]>([])
   const [selectedInputId, setSelectedInputId] = useState("")
   const [selectedOutputId, setSelectedOutputId] = useState("")
+  const [showLiveMetrics, setShowLiveMetrics] = useState(false)
   const selectedScreenVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteAudioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map())
   const remoteAnalyzersRef = useRef<Map<string, { context: AudioContext; analyser: AnalyserNode; source: MediaStreamAudioSourceNode }>>(new Map())
@@ -240,6 +241,9 @@ export const WorkspaceChatPanel = ({
               <h3>Screen Share Window</h3>
               <p>{isCurrentUserSharingScreen ? "You are sharing your screen now." : "Screen share is off."}</p>
             </header>
+            <button className="secondary metrics-toggle" onClick={() => setShowLiveMetrics((prev) => !prev)}>
+              {showLiveMetrics ? "Hide live metrics" : "Show live metrics"}
+            </button>
             <div className="screen-share-stats">
               <p><strong>Voice participants:</strong> {remoteAudios.length}</p>
               <p><strong>Screen sharing:</strong> {activeRoomScreenSharers.length}</p>
@@ -310,7 +314,7 @@ export const WorkspaceChatPanel = ({
                 </article>
               ))}
             </div>
-            <section className="stream-metrics-panel">
+            {showLiveMetrics && <section className="stream-metrics-panel">
               <h4>Bağlantı rotası izleme (UDP/TURN/P2P)</h4>
               <p>Her peer için aktif ICE rotası, protokol (UDP/TCP/TLS) ve relay durumu.</p>
               {Object.entries(connectionDiagnosticsByUser).length === 0 ? (
@@ -353,8 +357,8 @@ export const WorkspaceChatPanel = ({
                   </table>
                 </div>
               )}
-            </section>
-            <section className="stream-metrics-panel">
+            </section>}
+            {showLiveMetrics && <section className="stream-metrics-panel">
               <h4>Canlı yayın metrikleri</h4>
               <p>Webcam/screen aktarımında gecikme ve bağlantı kalitesini takip edin.</p>
               {streamStatsRows.length === 0 ? (
@@ -409,7 +413,7 @@ export const WorkspaceChatPanel = ({
                   </table>
                 </div>
               )}
-            </section>
+            </section>}
           </section>
 
           <div className="message-toolbar">

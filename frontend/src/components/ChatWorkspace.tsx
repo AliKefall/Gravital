@@ -19,6 +19,7 @@ export const ChatWorkspace = (props: ChatWorkspaceProps) => {
         newFriend={state.newFriend}
         friends={state.friends}
         selectedFriendForRoom={state.selectedFriendForRoom}
+        roomMetaByRoom={state.roomMetaByRoom}
         status={state.status}
         unreadCountByRoom={state.unreadCountByRoom}
         pendingIncomingRequests={state.pendingIncomingRequests}

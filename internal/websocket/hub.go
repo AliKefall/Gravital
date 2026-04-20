@@ -184,7 +184,7 @@ func (h *Hub) publishPresence(username string, isOnline bool) {
 }
 
 func (h *Hub) HandleMessage(sender *Client, msg Message) {
-	h.observeMessage("ibnound", string(msg.Type))
+	h.observeMessage("inbound", string(msg.Type))
 	switch msg.Type {
 	case TypeJoinRoom:
 		h.joinRoom(sender, msg.RoomID)
@@ -667,10 +667,7 @@ func (h *Hub) SendScreenStateToClient(client *Client, roomID string) {
 		return
 	}
 	data, _ := json.Marshal(state)
-	select {
-	case client.Send <- data:
-	default:
-	}
+	h.trySend(client, data)
 }
 
 func (h *Hub) broadcastRoomMeta(roomID string) {
@@ -680,10 +677,7 @@ func (h *Hub) broadcastRoomMeta(roomID string) {
 	}
 	data, _ := json.Marshal(meta)
 	for _, client := range recipients {
-		select {
-		case client.Send <- data:
-		default:
-		}
+		h.trySend(client, data)
 	}
 }
 
@@ -694,10 +688,7 @@ func (h *Hub) broadcastScreenState(roomID string) {
 	}
 	data, _ := json.Marshal(state)
 	for _, client := range recipients {
-		select {
-		case client.Send <- data:
-		default:
-		}
+		h.trySend(client, data)
 	}
 }
 func (h *Hub) buildScreenState(roomID string) *ScreenShareState {
@@ -812,10 +803,7 @@ func (h *Hub) sendSystem(client *Client, roomID, content string) {
 		Content: content,
 	}
 	data, _ := json.Marshal(msg)
-	select {
-	case client.Send <- data:
-	default:
-	}
+	h.trySend(client, data)
 }
 
 func (h *Hub) sendDirect(username string, msg Message) {
@@ -899,5 +887,16 @@ func (h *Hub) enqueueUnregister(client *Client) {
 	select {
 	case h.Unregister <- client:
 	default:
+	}
+}
+
+func (h *Hub) trySend(client *Client, payload []byte) {
+	if client == nil {
+		return
+	}
+	select {
+	case client.Send <- payload:
+	default:
+		h.enqueueUnregister(client)
 	}
 }
