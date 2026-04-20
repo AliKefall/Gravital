@@ -483,7 +483,7 @@ export const WorkspaceChatPanel = ({
           </footer>
         </section>
       ) : (
-        <section className="audio-settings-panel">
+        <section className="audio-settings-panel compact-audio">
           <h3>Audio Settings</h3>
           <p>Microphone/speaker selection and volume levels are stored here (reset on page refresh).</p>
           <label>
@@ -508,18 +508,23 @@ export const WorkspaceChatPanel = ({
             </select>
           </label>
 
-          <label>
-            Output Volume: {outputVolume}%
-            <input type="range" min={0} max={100} value={outputVolume} onChange={(event) => onOutputVolumeChange(Number(event.target.value))} />
-          </label>
-          <label>
-            Mic Volume: {micVolume}%
-            <input type="range" min={0} max={100} value={micVolume} onChange={(event) => onMicVolumeChange(Number(event.target.value))} />
-          </label>
-          <label>
-            Noise Gate (dB): {noiseGateDb}
-            <input type="range" min={-80} max={0} value={noiseGateDb} onChange={(event) => onNoiseGateDbChange(Number(event.target.value))} />
-          </label>
+          <div className="audio-grid">
+            <article className="audio-control-card">
+              <strong>Output Volume</strong>
+              <span>{outputVolume}%</span>
+              <input type="range" min={0} max={100} value={outputVolume} onChange={(event) => onOutputVolumeChange(Number(event.target.value))} />
+            </article>
+            <article className="audio-control-card">
+              <strong>Mic Volume</strong>
+              <span>{micVolume}%</span>
+              <input type="range" min={0} max={100} value={micVolume} onChange={(event) => onMicVolumeChange(Number(event.target.value))} />
+            </article>
+            <article className="audio-control-card" style={{ gridColumn: "1 / -1" }}>
+              <strong>Noise Gate</strong>
+              <span>{noiseGateDb} dB</span>
+              <input type="range" min={-80} max={0} value={noiseGateDb} onChange={(event) => onNoiseGateDbChange(Number(event.target.value))} />
+            </article>
+          </div>
 
           <div className="audio-toggle-row">
             <button className="secondary" onClick={onToggleMic} disabled={status !== "online" || !activeRoom || !voiceConnected}>

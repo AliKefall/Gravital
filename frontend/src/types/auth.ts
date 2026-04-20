@@ -33,3 +33,18 @@ export type AuthUser = {
   email?: string
 }
 
+
+export type ForgotPasswordRequest = {
+  email: string
+}
+
+export type ResetPasswordRequest = {
+  email: string
+  code: string
+  new_password: string
+}
+
+export type SocialProvidersResponse = {
+  google?: string
+  github?: string
+}

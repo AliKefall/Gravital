@@ -102,6 +102,9 @@ func registerAuthRoutes(r chi.Router, deps *serverDependencies) {
 		r.Post("/register", deps.handler.RegisterHandler)
 		r.Post("/login", deps.handler.LoginHandler)
 		r.Post("/refresh", deps.handler.RefreshHandler)
+		r.Post("/forgot-password", deps.handler.RequestPasswordResetHandler)
+		r.Post("/reset-password", deps.handler.VerifyPasswordResetHandler)
+		r.Get("/oauth/providers", deps.handler.OAuthOptionsHandler)
 
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.JWTMiddleware(deps.application))

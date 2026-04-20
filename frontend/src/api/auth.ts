@@ -2,10 +2,13 @@ import { getApiBaseUrl } from "./config"
 import type {
   ApiError,
   AuthUser,
+  ForgotPasswordRequest,
   LoginRequest,
   LoginResponse,
   RegisterRequest,
   RegisterResponse,
+  ResetPasswordRequest,
+  SocialProvidersResponse,
 } from "../types/auth"
 
 
@@ -103,4 +106,25 @@ export const logoutUser = async (token: string): Promise<void> => {
   if (!response.ok) {
     await parseResponseError(response, "Logout failed")
   }
+}
+
+export const requestPasswordReset = async (input: ForgotPasswordRequest): Promise<{ message: string }> => {
+  return postJSON<{ message: string }>("/auth/forgot-password", input, "Password reset request failed.")
+}
+
+export const resetPasswordWithCode = async (input: ResetPasswordRequest): Promise<{ message: string }> => {
+  return postJSON<{ message: string }>("/auth/reset-password", input, "Password reset failed.")
+}
+
+export const fetchSocialProviders = async (): Promise<SocialProvidersResponse> => {
+  const response = await fetch(`${API_BASE_URL}/auth/oauth/providers`, {
+    method: "GET",
+    credentials: "include",
+  })
+
+  if (!response.ok) {
+    return parseResponseError(response, "Could not load social providers")
+  }
+
+  return (await response.json()) as SocialProvidersResponse
 }
