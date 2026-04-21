@@ -23,6 +23,7 @@ type Client struct {
 	Hub      *Hub
 }
 
+// Standarized read and write pumps. You can find them in the gorilla/websocker documentation
 func (c *Client) ReadPump() {
 	defer func() {
 		c.Hub.Unregister <- c
@@ -41,6 +42,8 @@ func (c *Client) ReadPump() {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseNormalClosure) {
 				log.Printf("Websocket read error for user= %s: %v", c.Username, err)
 			}
+			// Break was forgotten. It was creating a ws loop.
+			break
 		}
 		msg.From = c.Username
 		c.Hub.HandleMessage(c, msg)

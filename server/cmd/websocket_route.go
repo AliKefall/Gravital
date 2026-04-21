@@ -70,6 +70,9 @@ func rehydrateClientState(ctx context.Context, deps *serverDependencies, client 
 	}
 }
 
+// A bit idea in here, You can simply delete this whole snapshot logic from here and
+// you can use Cassandra or ScyllaDB for EC type database. But it is too much technical debt.
+// Event with the current state of this project it is already enough.
 func sendRoomSnapshot(ctx context.Context, deps *serverDependencies, client *websocket.Client, room db.ChatRoom) {
 	owner, err := deps.queries.GetUsersWithID(ctx, room.OwnerID)
 	if err == nil {
@@ -115,6 +118,9 @@ func sendRoomSnapshot(ctx context.Context, deps *serverDependencies, client *web
 	}
 }
 
+// This function is here because of sqlc typing hell.
+// You can simply use sql.NullString for the necessery places.
+// This one is a better way to implement it.
 func nullableString(value sql.NullString) string {
 	if !value.Valid {
 		return ""

@@ -1,3 +1,8 @@
+-- A note to this part when you are using libsql3(or any other version of it)
+-- be absolutely sure that everything is primal data type. Do not try to use time 
+-- or any other object types which can occur with sqlc. Simply put uuids and time objects
+-- must be a string and they must be formatted in the exact form in the code too.
+
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,

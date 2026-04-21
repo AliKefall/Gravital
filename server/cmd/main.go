@@ -24,6 +24,9 @@ func main() {
 
 	conn, deps := bootstrapServer(config)
 	defer conn.Close()
+
+	// Waiting times and header bytes sizes are standarized. I don't prefer you to change
+	// any of them here.
 	server := &http.Server{
 		Addr:              ":" + config.Port,
 		Handler:           buildRouter(config, deps),
@@ -50,6 +53,8 @@ func applyConfigDefaults(config *ServerConfig) {
 	}
 }
 
+// These three must be set in any circumstances. The rest can be tweaked for testing.
+// But be careful playing with them.
 func validateConfig(config *ServerConfig) {
 	if config.DBUrl == "" || config.JWTSecret == "" || config.DBAuthToken == "" {
 		log.Fatal("DB_URL, DB_AUTH_TOKEN and JWT_SECRET must be set")

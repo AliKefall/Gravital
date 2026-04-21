@@ -7,6 +7,9 @@ import (
 	"time"
 )
 
+// I was planning to implement a redis cache system for my system.
+// It is simply not active at all feel free to delete them as you wish.
+// Or you can expand this part. All up to you.
 type ServerConfig struct {
 	DBUrl               string
 	JWTSecret           string

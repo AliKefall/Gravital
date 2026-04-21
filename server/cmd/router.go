@@ -37,6 +37,8 @@ func buildRouter(config *ServerConfig, deps *serverDependencies) chi.Router {
 
 	registerUploadsRoute(r)
 	r.Get("/webrtc/config", deps.handler.WebRTCConfigHandler)
+	// Metrics handler is a must for prometheus.
+	// If you don't want to use it you can delete this.
 	r.Handle("/metrics", promhttp.Handler())
 	registerAuthRoutes(r, deps)
 	registerWebsocketRoute(r, deps)

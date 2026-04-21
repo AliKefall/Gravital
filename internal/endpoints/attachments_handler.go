@@ -19,6 +19,11 @@ import (
 	"github.com/google/uuid"
 )
 
+// 100 MB is too much for production, also put limitations for each user,
+// I only added them because I wanted to send a short movie to my other computer
+// if you don't have any idea how much it would be great even 100MB is okay,
+// But put maximum limitations for each user.
+// You can change maximum limit of upload size from the environment.
 const defaultMaxAttachmentUploadSize int64 = 100 << 20
 
 type UploadAttachmentResponse struct {

@@ -75,7 +75,7 @@ cd /opt/gravital/ && go build -o /usr/local/bin/gravital-server ./server/cmd
  
 - `curl -i https://<api-domain>/health`
 - Login from UI, join room, test message + voice + screen share.
- 
+
 ### Common Mistakes to Avoid
  
 - Missing WebSocket upgrade headers in Nginx.
@@ -84,6 +84,12 @@ cd /opt/gravital/ && go build -o /usr/local/bin/gravital-server ./server/cmd
 - Different environment values between build-time frontend and runtime backend.
 - This program needs a secure connection to actually send and receive WebRTC info. Which is either localhost or "https" connection.
  
+## API Documentation
+
+Detailed API behavior (what each endpoint does, required payloads, and flow details) is documented in:
+
+- [`API_DOCUMENTATION.md`](./API_DOCUMENTATION.md)
+
 ## Quick Start
  
 ### Run (Development)

@@ -50,12 +50,11 @@ type Message struct {
 	Candidate     string      `json:"candidate,omitempty"`
 	SDPMid        string      `json:"sdp_mid,omitempty"`
 	SDPMLineIndex *uint16     `json:"sdp_mline_index,omitempty"`
-
-	MicMuted      bool    `json:"mic_muted,omitempty"`
-	OutputMuted   bool    `json:"output_muted,omitempty"`
-	FPS           float64 `json:"fps,omitempty"`
-	LatencyMS     float64 `json:"latency_ms,omitempty"`
-	BitrateKbps   float64 `json:"bitrate_kbps,omitempty"`
-	NetworkStatus string  `json:"network_status,omitempty"`
-	Online        *bool   `json:"online,omitempty"`
+	MicMuted      bool        `json:"mic_muted,omitempty"`
+	OutputMuted   bool        `json:"output_muted,omitempty"`
+	FPS           float64     `json:"fps,omitempty"`
+	LatencyMS     float64     `json:"latency_ms,omitempty"`
+	BitrateKbps   float64     `json:"bitrate_kbps,omitempty"`
+	NetworkStatus string      `json:"network_status,omitempty"`
+	Online        *bool       `json:"online,omitempty"`
 }
