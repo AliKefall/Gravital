@@ -339,4 +339,3 @@ func (h *Handler) RejectFriendRequestHandler(w http.ResponseWriter, r *http.Requ
 	}
 	RespondWithJson(w, http.StatusOK, map[string]string{"status": "rejected"})
 }
-

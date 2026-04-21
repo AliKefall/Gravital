@@ -65,4 +65,3 @@ func (c *FriendListCache) Invalidate(userIDs ...string) {
 	}
 	c.mu.Unlock()
 }
-
