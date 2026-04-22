@@ -976,7 +976,7 @@ button:disabled {
   display: grid;
   gap: 0.12rem;
   font-size: 0.78rem;
-  color: #cab6a8;
+  color: #5e2d09;
 }
 
 .password-guideline li.pass {
@@ -1055,12 +1055,12 @@ button:disabled {
 }
 
 :root[data-theme="dark"] {
-  --text-main: #000000;
-  --bg-main: #3b332c;
-  --bg-panel: #c8b6a2;
-  --bg-soft: #d5c4b1;
-  --border-main: rgba(0, 0, 0, 0.28);
-  --accent-main: #5d3f29;
+  --text-main: #f7f3ec;
+  --bg-main: #1f1a16;
+  --bg-panel: #2c251f;
+  --bg-soft: #3a3129;
+  --border-main: rgba(255, 255, 255, 0.2);
+  --accent-main: #b68761;
 }
 
 body,
@@ -1131,6 +1131,31 @@ body {
   padding: 0.3rem 0.7rem;
   font-size: 0.75rem;
   cursor: pointer;
+}
+
+.network-chip {
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.82rem;
+}
+
+.network-chip.good {
+  background: rgba(34, 197, 94, 0.2);
+  color: #16a34a !important;
+}
+
+.network-chip.medium {
+  background: rgba(234, 179, 8, 0.2);
+  color: #b45309 !important;
+}
+
+.network-chip.poor {
+  background: rgba(239, 68, 68, 0.2);
+  color: #dc2626 !important;
+}
+
+.network-chip.unknown {
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .join-room-button {

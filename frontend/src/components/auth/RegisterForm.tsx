@@ -66,6 +66,15 @@ export const RegisterForm = ({ onSuccess, language }: RegisterFormProps) => {
   const [serverError, setServerError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
+  const labels = useMemo(() => ({
+    passwordGuidelines: isEnglish
+      ? ["8-128 characters", "At least one uppercase letter", "At least one lowercase letter", "At least one number"]
+      : ["8-128 karakter", "En az bir büyük harf", "En az bir küçük harf", "En az bir rakam"],
+    showPassword: isEnglish ? "Show password" : "Şifreyi göster",
+    hidePassword: isEnglish ? "Hide password" : "Şifreyi gizle",
+    successPrefix: isEnglish ? "Registration successful" : "Kayıt başarılı",
+    fallbackError: isEnglish ? "An unexpected error occurred during registration." : "Kayıt sırasında beklenmeyen bir hata oluştu.",
+  }), [isEnglish])
 
   const isFormValid = useMemo(() => {
     const nextErrors = validate(formData)
@@ -99,7 +108,7 @@ export const RegisterForm = ({ onSuccess, language }: RegisterFormProps) => {
     try {
       const payload = normalizePayload(formData)
       const response = await registerUser(payload)
-      setSuccessMessage(`Registration successful: ${response.username}.`)
+      setSuccessMessage(`${labels.successPrefix}: ${response.username}.`)
       setFormData({
         email: "",
         username: "",
@@ -108,7 +117,7 @@ export const RegisterForm = ({ onSuccess, language }: RegisterFormProps) => {
       setErrors({})
       onSuccess?.(response.username)
     } catch (error) {
-      const fallbackError = "An unexpected error occurred during registration."
+      const fallbackError = labels.fallbackError
       setServerError(error instanceof Error ? error.message : fallbackError)
     } finally {
       setIsSubmitting(false)
@@ -162,18 +171,16 @@ export const RegisterForm = ({ onSuccess, language }: RegisterFormProps) => {
           type="button"
           className="password-toggle-button"
           onClick={() => setShowPassword((prev) => !prev)}
-          aria-label={showPassword ? "Hide password" : "Show password"}
+          aria-label={showPassword ? labels.hidePassword : labels.showPassword}
         >
           <AppIcon name={showPassword ? "eyeOff" : "eye"} />
         </button>
       </div>
       <ul id="password-guideline" className="password-guideline">
-
-        <li className={passwordChecks.length ? "pass" : ""}>8-128 characters</li>
-        <li className={passwordChecks.upper ? "pass" : ""}>At least one uppercase letter</li>
-        <li className={passwordChecks.lower ? "pass" : ""}>At least one lowercase letter</li>
-        <li className={passwordChecks.digit ? "pass" : ""}>At least one number</li>
-
+        <li className={passwordChecks.length ? "pass" : ""}>{labels.passwordGuidelines[0]}</li>
+        <li className={passwordChecks.upper ? "pass" : ""}>{labels.passwordGuidelines[1]}</li>
+        <li className={passwordChecks.lower ? "pass" : ""}>{labels.passwordGuidelines[2]}</li>
+        <li className={passwordChecks.digit ? "pass" : ""}>{labels.passwordGuidelines[3]}</li>
       </ul>
       {errors.password ? <small id="password-error" className="error">{errors.password}</small> : null}
 

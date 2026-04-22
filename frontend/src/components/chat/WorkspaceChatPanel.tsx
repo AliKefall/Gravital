@@ -175,12 +175,27 @@ export const WorkspaceChatPanel = ({
     return activeRoomScreenSharers.filter((member) => !renderedUsers.has(member))
   }, [activeRoomScreenSharers, localPreviewScreen, remoteScreens])
 
+  const connectionQuality = useMemo<"good" | "medium" | "poor" | "unknown">(() => {
+    if (streamStatsRows.length === 0) return "unknown"
+    if (streamStatsRows.some((row) => row.networkQuality === "poor")) return "poor"
+    if (streamStatsRows.some((row) => row.networkQuality === "medium")) return "medium"
+    return "good"
+  }, [streamStatsRows])
+
+  const connectionQualityLabel = connectionQuality === "unknown"
+    ? (isEnglish ? "No data" : "Veri yok")
+    : connectionQuality === "good"
+      ? (isEnglish ? "Good" : "İyi")
+      : connectionQuality === "medium"
+        ? (isEnglish ? "Medium" : "Orta")
+        : (isEnglish ? "Poor" : "Zayıf")
+
   return (
     <section className="chat-panel">
       <header className="chat-header compact-chat-header">
         <div>
-          <h1>{activeDirectFriend ? `#${activeDirectFriend}` : activeRoom ? `#${activeRoom}` : "No room selected"}</h1>
-          <p>{status === "online" ? "Live" : status === "connecting" ? "Connecting" : status === "reconnecting" ? "Reconnecting" : "Offline"}</p>
+          <h1>{activeDirectFriend ? `#${activeDirectFriend}` : activeRoom ? `#${activeRoom}` : (isEnglish ? "No room selected" : "Oda seçilmedi")}</h1>
+          <p>{status === "online" ? (isEnglish ? "Live" : "Canlı") : status === "connecting" ? (isEnglish ? "Connecting" : "Bağlanıyor") : status === "reconnecting" ? (isEnglish ? "Reconnecting" : "Yeniden bağlanıyor") : (isEnglish ? "Offline" : "Çevrimdışı")}</p>
         </div>
 
         <div className="header-actions compact-actions">
@@ -206,11 +221,11 @@ export const WorkspaceChatPanel = ({
           </button>
           <button className="secondary" onClick={onToggleScreenShare} disabled={status !== "online" || !activeRoom || !voiceConnected}>
             <AppIcon name="screen" />
-            <span>{screenSharing ? "Stop Sharing" : "Share Screen"}</span>
+            <span>{screenSharing ? (isEnglish ? "Stop Sharing" : "Paylaşımı Durdur") : (isEnglish ? "Share Screen" : "Ekran Paylaş")}</span>
           </button>
           <button className="secondary" onClick={onToggleCameraShare} disabled={status !== "online" || !activeRoom || !voiceConnected}>
             <AppIcon name="camera" />
-            <span>{cameraSharing ? "Stop Camera" : "Share Camera"}</span>
+            <span>{cameraSharing ? (isEnglish ? "Stop Camera" : "Kamerayı Durdur") : (isEnglish ? "Share Camera" : "Kamera Paylaş")}</span>
           </button>
           <button
             className="secondary"
@@ -219,7 +234,7 @@ export const WorkspaceChatPanel = ({
             title={!activeRoom ? "Select a room first" : isActiveRoomOwner ? "Room owner cannot leave room" : undefined}
           >
             <AppIcon name="leave" />
-            <span>Leave Room</span>
+            <span>{isEnglish ? "Leave Room" : "Odadan Ayrıl"}</span>
           </button>
           <button
             className="secondary"
@@ -228,11 +243,11 @@ export const WorkspaceChatPanel = ({
             title={!activeRoom ? "Select a room first" : !isActiveRoomOwner ? "Only the room owner can close the room" : undefined}
           >
             <AppIcon name="trash" />
-            <span>Close Room</span>
+            <span>{isEnglish ? "Close Room" : "Odayı Kapat"}</span>
           </button>
           <button className="danger" onClick={() => void onLogout()}>
             <AppIcon name="logout" />
-            <span>Logout</span>
+            <span>{isEnglish ? "Logout" : "Çıkış"}</span>
           </button>
         </div>
       </header>
@@ -247,8 +262,12 @@ export const WorkspaceChatPanel = ({
           <strong>{systemMessageCount}</strong>
         </article>
         <article className="kpi-card">
-          <span>Live participants</span>
+          <span>{isEnglish ? "Live participants" : "Canlı katılımcı"}</span>
           <strong>{activeRoomMeta?.activeUsers.length ?? 0}</strong>
+        </article>
+        <article className="kpi-card">
+          <span>{isEnglish ? "Connection quality" : "Bağlantı kalitesi"}</span>
+          <strong className={`network-chip ${connectionQuality}`}>{connectionQualityLabel}</strong>
         </article>
       </div>
 

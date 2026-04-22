@@ -42,6 +42,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const [messageText, setMessageText] = useState("")
     const [selectedFriendForRoom, setSelectedFriendForRoom] = useState("")
     const [voiceConnected, setVoiceConnected] = useState(false)
+    const [voiceRoomId, setVoiceRoomId] = useState("")
     const [micMuted, setMicMuted] = useState(false)
     const [outputMuted, setOutputMuted] = useState(false)
     const [uploading, setUploading] = useState(false)
@@ -83,6 +84,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const activeVideoModeRef = useRef<VideoMode>("screen")
     const activeRoomRef = useRef(activeRoom)
     const voiceConnectedRef = useRef(voiceConnected)
+    const voiceRoomRef = useRef(voiceRoomId)
     const currentMessageContextRef = useRef({ activeRoom: "", activeDirectFriend: "" })
     const peerProfileStabilityRef = useRef<Map<string, { candidate: NetworkProfile, hits: number }>>(new Map())
 
@@ -90,6 +92,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     useEffect(() => {
         voiceConnectedRef.current = voiceConnected
     }, [voiceConnected])
+
+    useEffect(() => {
+        voiceRoomRef.current = voiceRoomId
+    }, [voiceRoomId])
 
     useEffect(() => {
         currentMessageContextRef.current = { activeRoom, activeDirectFriend }
@@ -157,6 +163,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         peerProfileStabilityRef.current.clear()
         setSelectedScreenUser(null)
         setIsJoiningVoice(false)
+        setVoiceRoomId("")
+        voiceRoomRef.current = ""
     }
 
     const sendRealtimeLeaveSignals = (roomId: string) => {
@@ -696,7 +704,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                         return
                     }
 
-                    if (payload.type === "voice_join" && voiceConnectedRef.current && payload.from && payload.from !== username && payload.room_id === activeRoomRef.current) {
+                    if (payload.type === "voice_join" && voiceConnectedRef.current && payload.from && payload.from !== username && payload.room_id === voiceRoomRef.current) {
                         void (async () => {
                             try {
                                 await connectVoicePeerWithRetry(payload.from as string, payload.room_id as string)
@@ -935,8 +943,9 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }
         if (status !== "online" || (!voiceConnected && !screenSharing)) return
         keepAliveIntervalRef.current = window.setInterval(() => {
-            if (!activeRoomRef.current) return
-            send({ type: "keepalive", room_id: activeRoomRef.current, timestamp: new Date().toISOString() })
+            const keepAliveRoom = voiceRoomRef.current || activeRoomRef.current
+            if (!keepAliveRoom) return
+            send({ type: "keepalive", room_id: keepAliveRoom, timestamp: new Date().toISOString() })
         }, 20_000)
         return () => {
             if (keepAliveIntervalRef.current !== null) {
@@ -984,31 +993,26 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
 
     const visibleMessages = useMemo(() => {
-        if (activeDirectFriend) {
-            return messages.filter((item) => (
+        const scopedMessages = activeDirectFriend
+            ? messages.filter((item) => (
                 item.type === "direct_message" &&
                 ((item.from === username && item.to === activeDirectFriend) || (item.from === activeDirectFriend && item.to === username))
             ))
-        }
-        return messages.filter((item) => !item.room_id || item.room_id === activeRoom)
+            : messages.filter((item) => !item.room_id || item.room_id === activeRoom)
+        return [...scopedMessages].sort((a, b) => {
+            const left = a.timestamp ? Date.parse(a.timestamp) : 0
+            const right = b.timestamp ? Date.parse(b.timestamp) : 0
+            return left - right
+        })
     }, [activeDirectFriend, activeRoom, messages, username])
 
 
 
     useEffect(() => {
-        messageListRef.current?.scrollTo({ top: messageListRef.current.scrollHeight, behavior: "smooth" })
+        messageListRef.current?.scrollTo({ top: messageListRef.current.scrollHeight, behavior: "auto" })
     }, [visibleMessages])
 
     useEffect(() => {
-        const previousRoom = activeRoomRef.current
-        if (previousRoom && previousRoom !== activeRoom) {
-            sendRealtimeLeaveSignals(previousRoom)
-        }
-        cleanupVoiceConnections()
-        setVoiceConnected(false)
-        setMicMuted(false)
-        voiceConnectedRef.current = false
-        setOutputMuted(false)
         activeRoomRef.current = activeRoom
     }, [activeRoom])
 
@@ -1132,7 +1136,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     }
 
     const stopScreenShare = () => {
-        if (!screenStreamRef.current || !activeRoomRef.current) return
+        const targetRoom = voiceRoomRef.current || activeRoomRef.current
+        if (!screenStreamRef.current || !targetRoom) return
         const sharedTrackIds = new Set(screenStreamRef.current.getTracks().map((track) => track.id))
         screenStreamRef.current.getTracks().forEach((track) => track.stop())
         peerConnectionsRef.current.forEach((peer) => {
@@ -1146,15 +1151,16 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setLocalPreviewScreen(null)
         setScreenSharing(false)
         setCameraSharing(false)
-            ; (roomMeta[activeRoomRef.current]?.activeUsers ?? []).forEach((remoteUser) => {
-                if (remoteUser !== username) void renegotiateWith(remoteUser, activeRoomRef.current)
+            ; (roomMeta[targetRoom]?.activeUsers ?? []).forEach((remoteUser) => {
+                if (remoteUser !== username) void renegotiateWith(remoteUser, targetRoom)
             })
-        send({ type: "screen_share_stop", room_id: activeRoomRef.current, timestamp: new Date().toISOString() })
-        updateScreenSharers(activeRoomRef.current, (current) => current.filter((member) => member !== username))
+        send({ type: "screen_share_stop", room_id: targetRoom, timestamp: new Date().toISOString() })
+        updateScreenSharers(targetRoom, (current) => current.filter((member) => member !== username))
     }
 
     const startVideoShare = async (mode: "screen" | "camera") => {
-        if (!activeRoom || !voiceConnected) return
+        const targetRoom = voiceRoomRef.current || activeRoom
+        if (!targetRoom || !voiceConnected) return
         activeVideoModeRef.current = mode
         const stream = mode === "screen"
             ? await navigator.mediaDevices.getDisplayMedia(SCREEN_SHARE_CONSTRAINTS)
@@ -1176,16 +1182,16 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setScreenSharing(mode === "screen")
         setCameraSharing(mode === "camera")
 
-        for (const remoteUser of roomMeta[activeRoom]?.activeUsers ?? []) {
+        for (const remoteUser of roomMeta[targetRoom]?.activeUsers ?? []) {
             if (remoteUser === username) continue
-            const peer = await ensurePeerConnection(remoteUser, activeRoom)
+            const peer = await ensurePeerConnection(remoteUser, targetRoom)
             stream.getTracks().forEach((track) => peer.addTrack(track, stream))
             tunePeerSender(peer, "video", "medium")
-            await renegotiateWith(remoteUser, activeRoom)
+            await renegotiateWith(remoteUser, targetRoom)
         }
 
-        send({ type: "screen_share_start", room_id: activeRoom, timestamp: new Date().toISOString() })
-        updateScreenSharers(activeRoom, (current) => [...current, username])
+        send({ type: "screen_share_start", room_id: targetRoom, timestamp: new Date().toISOString() })
+        updateScreenSharers(targetRoom, (current) => [...current, username])
         ensureMetricsLoop()
     }
 
@@ -1226,27 +1232,30 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     }
 
     const handleToggleVoice = () => {
-        if (!activeRoom || isJoiningVoice) return
+        if ((!activeRoom && !voiceConnected) || isJoiningVoice) return
 
         if (!voiceConnected) {
             setIsJoiningVoice(true)
             void (async () => {
+                const targetRoom = activeRoom
                 try {
                     await ensureOutgoingAudioStream()
                     voiceConnectedRef.current = true
                     setVoiceConnected(true)
-                    send({ type: "voice_join", room_id: activeRoom, timestamp: new Date().toISOString() })
+                    setVoiceRoomId(targetRoom)
+                    voiceRoomRef.current = targetRoom
+                    send({ type: "voice_join", room_id: targetRoom, timestamp: new Date().toISOString() })
 
-                    const connectTasks = (roomMeta[activeRoom]?.activeUsers ?? [])
+                    const connectTasks = (roomMeta[targetRoom]?.activeUsers ?? [])
                         .filter((remoteUser) => remoteUser !== username)
                         .map(async (remoteUser) => {
-                            await connectVoicePeerWithRetry(remoteUser, activeRoom)
+                            await connectVoicePeerWithRetry(remoteUser, targetRoom)
 
                         })
                     await Promise.all(connectTasks)
                     ensureMetricsLoop()
                 } catch {
-                    setMessages((prev) => [...prev, { type: "system", room_id: activeRoom, content: "Microphone permission denied or voice chat could not be started." }])
+                    setMessages((prev) => [...prev, { type: "system", room_id: targetRoom, content: "Microphone permission denied or voice chat could not be started." }])
                 } finally {
                     setIsJoiningVoice(false)
                 }
@@ -1254,14 +1263,18 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             return
         }
 
-        send({ type: "voice_leave", room_id: activeRoom, timestamp: new Date().toISOString() })
+        const connectedRoom = voiceRoomRef.current || activeRoom
+        if (connectedRoom) {
+            send({ type: "voice_leave", room_id: connectedRoom, timestamp: new Date().toISOString() })
+        }
         cleanupVoiceConnections()
         voiceConnectedRef.current = false
         setVoiceConnected(false)
     }
 
     const handleToggleScreenShare = () => {
-        if (!activeRoom || !voiceConnected) return
+        const targetRoom = voiceRoomRef.current || activeRoom
+        if (!targetRoom || !voiceConnected) return
         if (screenSharing || cameraSharing) {
             stopScreenShare()
             return
@@ -1271,13 +1284,14 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             try {
                 await startVideoShare("screen")
             } catch {
-                setMessages((prev) => [...prev, { type: "system", room_id: activeRoom, content: "Screen share could not be started." }])
+                setMessages((prev) => [...prev, { type: "system", room_id: targetRoom, content: "Screen share could not be started." }])
             }
         })()
     }
 
     const handleToggleCameraShare = () => {
-        if (!activeRoom || !voiceConnected) return
+        const targetRoom = voiceRoomRef.current || activeRoom
+        if (!targetRoom || !voiceConnected) return
         if (cameraSharing || screenSharing) {
             stopScreenShare()
             return
@@ -1286,26 +1300,28 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             try {
                 await startVideoShare("camera")
             } catch {
-                setMessages((prev) => [...prev, { type: "system", room_id: activeRoom, content: "Camera share could not be started." }])
+                setMessages((prev) => [...prev, { type: "system", room_id: targetRoom, content: "Camera share could not be started." }])
             }
         })()
     }
 
     const handleToggleMic = () => {
-        if (!activeRoom || !voiceConnected) return
+        const targetRoom = voiceRoomRef.current || activeRoom
+        if (!targetRoom || !voiceConnected) return
         const nextMuted = !micMuted
         setMicMuted(nextMuted)
         localStreamRef.current?.getAudioTracks().forEach((track) => {
             track.enabled = !nextMuted
         })
-        send({ type: "voice_state", room_id: activeRoom, content: "mic_state", timestamp: new Date().toISOString(), mic_muted: nextMuted, output_muted: outputMuted })
+        send({ type: "voice_state", room_id: targetRoom, content: "mic_state", timestamp: new Date().toISOString(), mic_muted: nextMuted, output_muted: outputMuted })
     }
 
     const handleToggleOutput = () => {
-        if (!activeRoom || !voiceConnected) return
+        const targetRoom = voiceRoomRef.current || activeRoom
+        if (!targetRoom || !voiceConnected) return
         const nextMuted = !outputMuted
         setOutputMuted(nextMuted)
-        send({ type: "voice_state", room_id: activeRoom, content: "output_state", timestamp: new Date().toISOString(), mic_muted: micMuted, output_muted: nextMuted })
+        send({ type: "voice_state", room_id: targetRoom, content: "output_state", timestamp: new Date().toISOString(), mic_muted: micMuted, output_muted: nextMuted })
     }
 
     const handleOutputVolumeChange = (nextVolume: number) => {
