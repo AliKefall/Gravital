@@ -105,7 +105,12 @@ export const WorkspaceChatPanel = ({
   const selectedScreenVideoRef = useRef<HTMLVideoElement | null>(null)
   const remoteAudioElementsRef = useRef<Map<string, HTMLAudioElement>>(new Map())
   const remoteAnalyzersRef = useRef<Map<string, { context: AudioContext; analyser: AnalyserNode; source: MediaStreamAudioSourceNode }>>(new Map())
-  const selectedScreen = selectedScreenUser ? remoteScreens.find((screen) => screen.username === selectedScreenUser) : null
+  const noiseGateStateRef = useRef<Map<string, { mutedByGate: boolean; lastActiveAt: number }>>(new Map())
+  const visibleRemoteScreens = useMemo(
+    () => remoteScreens.filter((screen) => !screen.roomId || screen.roomId === activeRoom),
+    [activeRoom, remoteScreens],
+  )
+  const selectedScreen = selectedScreenUser ? visibleRemoteScreens.find((screen) => screen.username === selectedScreenUser) : null
 
   useEffect(() => {
     if (!navigator.mediaDevices?.enumerateDevices) return
@@ -136,7 +141,15 @@ export const WorkspaceChatPanel = ({
         const rms = Math.sqrt(sum / bins.length)
         const db = rms > 0 ? 20 * Math.log10(rms) : -100
         const element = remoteAudioElementsRef.current.get(username)
-        if (element) element.muted = outputMuted || db < noiseGateDb
+        if (!element) return
+        const now = Date.now()
+        const current = noiseGateStateRef.current.get(username) ?? { mutedByGate: false, lastActiveAt: now }
+        const releaseThreshold = noiseGateDb + 4
+        if (db > releaseThreshold) current.lastActiveAt = now
+        if (db < noiseGateDb && now - current.lastActiveAt > 350) current.mutedByGate = true
+        if (db > releaseThreshold) current.mutedByGate = false
+        noiseGateStateRef.current.set(username, current)
+        element.muted = outputMuted || current.mutedByGate
       })
     }, 150)
     return () => {
@@ -166,14 +179,14 @@ export const WorkspaceChatPanel = ({
 
   const systemMessageCount = useMemo(() => visibleMessages.filter((message) => message.type === "system").length, [visibleMessages])
   const streamStatsRows = useMemo(
-    () => Object.values(streamStatsByUser).sort((a, b) => a.username.localeCompare(b.username)),
-    [streamStatsByUser],
+    () => Object.values(streamStatsByUser).filter((stats) => !activeRoom || stats.roomId === activeRoom).sort((a, b) => a.username.localeCompare(b.username)),
+    [activeRoom, streamStatsByUser],
   )
   const pendingScreenSharers = useMemo(() => {
-    const renderedUsers = new Set<string>(remoteScreens.map((item) => item.username))
+    const renderedUsers = new Set<string>(visibleRemoteScreens.map((item) => item.username))
     if (localPreviewScreen) renderedUsers.add(localPreviewScreen.username)
     return activeRoomScreenSharers.filter((member) => !renderedUsers.has(member))
-  }, [activeRoomScreenSharers, localPreviewScreen, remoteScreens])
+  }, [activeRoomScreenSharers, localPreviewScreen, visibleRemoteScreens])
 
   const connectionQuality = useMemo<"good" | "medium" | "poor" | "unknown">(() => {
     if (streamStatsRows.length === 0) return "unknown"
@@ -317,7 +330,7 @@ export const WorkspaceChatPanel = ({
                   </div>
                 </article>
               )}
-              {remoteScreens.map((remoteScreen) => (
+              {visibleRemoteScreens.map((remoteScreen) => (
                 <article key={remoteScreen.username} className="screen-card">
                   <div className="screen-card-header">
                     <h4>@{remoteScreen.username}</h4>
@@ -430,22 +443,22 @@ export const WorkspaceChatPanel = ({
                       {streamStatsRows.map((stats) => (
                         <tr key={`stream-stats-${stats.username}`}>
                           <td>@{stats.username}</td>
-                          <td>{Math.round(stats.latencyMs)} ms</td>
-                          <td>{stats.fps.toFixed(1)}</td>
-                          <td>{stats.bitrateKbps.toFixed(0)} kbps</td>
-                          <td>{stats.audioBitrateKbps.toFixed(0)} kbps</td>
-                          <td>{stats.packetLossPct.toFixed(1)}%</td>
-                          <td>{stats.jitterMs.toFixed(1)} ms</td>
-                          <td>{stats.availableOutgoingKbps.toFixed(0)} kbps</td>
+                          <td>{Number.isFinite(stats.latencyMs) ? `${Math.round(stats.latencyMs)} ms` : "-"}</td>
+                          <td>{Number.isFinite(stats.fps) ? stats.fps.toFixed(1) : "-"}</td>
+                          <td>{Number.isFinite(stats.bitrateKbps) ? `${stats.bitrateKbps.toFixed(0)} kbps` : "-"}</td>
+                          <td>{Number.isFinite(stats.audioBitrateKbps) ? `${stats.audioBitrateKbps.toFixed(0)} kbps` : "-"}</td>
+                          <td>{Number.isFinite(stats.packetLossPct) ? `${stats.packetLossPct.toFixed(1)}%` : "-"}</td>
+                          <td>{Number.isFinite(stats.jitterMs) ? `${stats.jitterMs.toFixed(1)} ms` : "-"}</td>
+                          <td>{Number.isFinite(stats.availableOutgoingKbps) ? `${stats.availableOutgoingKbps.toFixed(0)} kbps` : "-"}</td>
                           <td>{stats.qualityLimitationReason}</td>
                           <td>{stats.width > 0 && stats.height > 0 ? `${stats.width}x${stats.height}` : "-"}</td>
                           <td>{stats.networkQuality}</td>
-                          <td>{stats.targetBitrateKbps.toFixed(0)} kbps</td>
-                          <td>{stats.frameDropPct.toFixed(1)}%</td>
+                          <td>{Number.isFinite(stats.targetBitrateKbps) ? `${stats.targetBitrateKbps.toFixed(0)} kbps` : "-"}</td>
+                          <td>{Number.isFinite(stats.frameDropPct) ? `${stats.frameDropPct.toFixed(1)}%` : "-"}</td>
                           <td>{stats.encoderImplementation}</td>
-                          <td>{stats.encodeMs.toFixed(2)} ms</td>
+                          <td>{Number.isFinite(stats.encodeMs) ? `${stats.encodeMs.toFixed(2)} ms` : "-"}</td>
                           <td>{stats.retransmittedPackets}/{stats.packetsSent}</td>
-                          <td>{stats.freezeCount} / {stats.totalFreezesDurationMs.toFixed(0)} ms</td>
+                          <td>{stats.freezeCount} / {Number.isFinite(stats.totalFreezesDurationMs) ? stats.totalFreezesDurationMs.toFixed(0) : "-"} ms</td>
                         </tr>
                       ))}
                     </tbody>
@@ -548,16 +561,6 @@ export const WorkspaceChatPanel = ({
             </article>
           </div>
 
-          <div className="audio-toggle-row">
-            <button className="secondary" onClick={onToggleMic} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-              <AppIcon name="mic" />
-              <span>{micMuted ? (isEnglish ? "Unmute Mic" : "Mikrofonu Aç") : (isEnglish ? "Mute Mic" : "Mikrofonu Kapat")}</span>
-            </button>
-            <button className="secondary" onClick={onToggleOutput} disabled={status !== "online" || !activeRoom || !voiceConnected}>
-              <AppIcon name="speaker" />
-              <span>{outputMuted ? (isEnglish ? "Unmute Output" : "Sesi Aç") : (isEnglish ? "Mute Output" : "Sesi Kapat")}</span>
-            </button>
-          </div>
         </section>
       )}
 

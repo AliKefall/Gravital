@@ -1092,6 +1092,24 @@ label,
   color: var(--text-main) !important;
 }
 
+.sidebar-action-card strong,
+.sidebar-action-card small,
+.panel-header h2,
+.panel-header h3,
+.composer input,
+.composer input::placeholder,
+.message-toolbar input,
+.message-toolbar input::placeholder,
+.screen-share-header h3,
+.stream-stats-inline,
+.stream-metrics-panel h4,
+.stream-metrics-panel p,
+.stream-metrics-table,
+.audio-control-card strong,
+.audio-control-card span {
+  color: var(--text-main) !important;
+}
+
 body {
   background: var(--bg-main) !important;
 }
@@ -1105,6 +1123,16 @@ body {
 .room-list,
 .friend-list {
   background: var(--bg-panel) !important;
+  border-color: var(--border-main) !important;
+}
+
+.sidebar-action-card,
+.message-item,
+.room-item,
+.request-row,
+.audio-control-card,
+.stream-metrics-panel {
+  background: var(--bg-soft) !important;
   border-color: var(--border-main) !important;
 }
 

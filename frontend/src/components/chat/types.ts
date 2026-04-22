@@ -124,6 +124,7 @@ export interface RemoteAudio {
 export interface RemoteScreen {
     username: string
     stream: MediaStream
+    roomId?: string
 }
 
 export interface StreamStats {

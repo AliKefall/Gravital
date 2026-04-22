@@ -107,7 +107,7 @@ func registerAuthRoutes(r chi.Router, deps *serverDependencies) {
 		r.Post("/forgot-password", deps.handler.RequestPasswordResetHandler)
 		r.Post("/reset-password", deps.handler.VerifyPasswordResetHandler)
 		r.Get("/oauth/providers", deps.handler.OAuthOptionsHandler)
-
+		r.Get("/webrtc/config", deps.handler.WebRTCConfigHandler)
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.JWTMiddleware(deps.application))
 			r.Get("/me", deps.handler.MeHandler)

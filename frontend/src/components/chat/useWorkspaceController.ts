@@ -447,8 +447,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setRemoteAudios((prev) => [...prev.filter((item) => item.username !== remoteUser), { username: remoteUser, stream }])
     }
 
-    const upsertRemoteScreen = (remoteUser: string, stream: MediaStream) => {
-        setRemoteScreens((prev) => [...prev.filter((item) => item.username !== remoteUser), { username: remoteUser, stream }])
+    const upsertRemoteScreen = (remoteUser: string, stream: MediaStream, roomId?: string) => {
+        setRemoteScreens((prev) => [...prev.filter((item) => item.username !== remoteUser), { username: remoteUser, stream, roomId }])
     }
 
     const removeRemoteAudio = (remoteUser: string) => {
@@ -541,7 +541,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             const stream = firstStream ?? new MediaStream([event.track])
 
             if (event.track.kind === "video") {
-                upsertRemoteScreen(remoteUser, stream)
+                upsertRemoteScreen(remoteUser, stream, roomId)
             } else {
                 upsertRemoteAudio(remoteUser, stream)
             }
@@ -791,7 +791,19 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                                 payload.type === "screen_share_start" ? [...current, payload.from as string] : current.filter((member) => member !== payload.from),
                             )
                         }
-                        if (payload.type === "screen_share_stop" && payload.from) removeRemoteScreen(payload.from)
+                        if (payload.type === "screen_share_stop" && payload.from) {
+                            removeRemoteScreen(payload.from)
+                            setStreamStatsByUser((prev) => {
+                                const next = { ...prev }
+                                delete next[payload.from as string]
+                                return next
+                            })
+                            setConnectionDiagnosticsByUser((prev) => {
+                                const next = { ...prev }
+                                delete next[payload.from as string]
+                                return next
+                            })
+                        }
                         return
                     }
 
@@ -1047,6 +1059,14 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
     const handleJoinSelectedRoom = () => {
         if (!pendingRoom) return
+        if (activeRoom && activeRoom !== pendingRoom) {
+            sendRealtimeLeaveSignals(activeRoom)
+            send({ type: "leave_room", room_id: activeRoom, timestamp: new Date().toISOString() })
+            cleanupVoiceConnections()
+            voiceConnectedRef.current = false
+            setVoiceConnected(false)
+            setSelectedScreenUser(null)
+        }
         setActiveDirectFriend("")
         setActiveRoom(pendingRoom)
         if (!joinedRoomsRef.current.has(pendingRoom)) {
