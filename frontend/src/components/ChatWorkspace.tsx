@@ -36,6 +36,7 @@ export const ChatWorkspace = (props: ChatWorkspaceProps) => {
         onSelectFriendForRoom={actions.setSelectedFriendForRoom}
         onAddFriendToRoom={actions.handleAddFriendToRoom}
         pendingRoom={state.pendingRoom}
+        joiningRoom={state.joiningRoom}
         onJoinSelectedRoom={actions.handleJoinSelectedRoom}
         language={language}
       />

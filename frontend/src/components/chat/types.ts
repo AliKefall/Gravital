@@ -29,7 +29,7 @@ export interface ChatMessage {
     available_outgoing_kbps?: number
     width?: number
     height?: number
-    network_status?: "good" | "medium" | "poor"
+    network_status?: "excellent" | "good" | "fair" | "degraded" | "medium" | "poor"
     audio_bitrate_kbps?: number
     quality_limitation_reason?: string
     target_bitrate_kbps?: number
@@ -138,7 +138,7 @@ export interface StreamStats {
     availableOutgoingKbps: number
     width: number
     height: number
-    networkQuality: "good" | "medium" | "poor"
+    networkQuality: "excellent" | "good" | "fair" | "degraded" | "poor"
     audioBitrateKbps: number
     qualityLimitationReason: string
     targetBitrateKbps: number

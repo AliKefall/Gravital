@@ -7,6 +7,7 @@ interface WorkspaceSidebarProps {
   rooms: string[]
   activeRoom: string
   pendingRoom: string
+  joiningRoom: boolean
   activeDirectFriend: string
   newRoom: string
   newFriend: string
@@ -21,7 +22,7 @@ interface WorkspaceSidebarProps {
   onNewRoomChange: (value: string) => void
   onCreateRoom: () => void
   onSelectRoom: (room: string) => void
-  onJoinSelectedRoom: () => void
+  onJoinSelectedRoom: (roomName?: string) => void
   onSelectDirectFriend: (friendUsername: string) => void
   onNewFriendChange: (value: string) => void
   onAddFriend: () => void
@@ -36,6 +37,7 @@ export const WorkspaceSidebar = ({
   rooms,
   activeRoom,
   pendingRoom,
+  joiningRoom,
   activeDirectFriend,
   newRoom,
   newFriend,
@@ -60,6 +62,11 @@ export const WorkspaceSidebar = ({
   onAddFriendToRoom,
 }: WorkspaceSidebarProps) => {
   const onlineFriends = useMemo(() => friends.filter((friend) => friend.online).length, [friends])
+  const onlineUsers = useMemo(() => {
+    const users = new Set<string>(friends.filter((friend) => friend.online).map((friend) => friend.username))
+    users.add(username)
+    return users
+  }, [friends, username])
   const isEnglish = language === "en"
 
   return (
@@ -140,23 +147,31 @@ export const WorkspaceSidebar = ({
         {rooms.length === 0 && <li className="empty-state">{isEnglish ? "No rooms yet" : "Henüz oda yok"}</li>}
         {rooms.map((room) => (
           <li key={room} className="room-entry">
+            <div className={`room-row ${room === activeRoom ? "active-room-row" : ""}`}>
             <button className={`room-item ${room === pendingRoom ? "active" : ""}`} onClick={() => onSelectRoom(room)}>
               # {room}
+              {room === activeRoom && <span className="room-chip active">{isEnglish ? "Active" : "Aktif"}</span>}
+              {room !== activeRoom && room === pendingRoom && <span className="room-chip">{isEnglish ? "Selected" : "Seçili"}</span>}
               {unreadCountByRoom[room] > 0 && <span className="unread-badge">+{unreadCountByRoom[room]}</span>}
             </button>
+            <button
+              className="join-inline-button"
+              onClick={() => onJoinSelectedRoom(room)}
+              disabled={status !== "online" || room === activeRoom || joiningRoom}
+            >
+              <AppIcon name="voice" />
+              <span>{joiningRoom ? (isEnglish ? "Joining..." : "Katılıyor...") : (isEnglish ? "Join" : "Katıl")}</span>
+            </button>
+            </div>
 
             <p className="room-members-inline">
-              {roomMetaByRoom[room]?.activeUsers?.length
-                ? `${isEnglish ? "In room" : "Odada"}: ${roomMetaByRoom[room].activeUsers.map((member) => `@${member}`).join(", ")}`
+              {roomMetaByRoom[room]?.activeUsers?.filter((member) => onlineUsers.has(member)).length
+                ? `${isEnglish ? "In room" : "Odada"}: ${roomMetaByRoom[room].activeUsers.filter((member) => onlineUsers.has(member)).map((member) => `@${member}`).join(", ")}`
                 : `${isEnglish ? "In room" : "Odada"}: ${isEnglish ? "no active users" : "aktif kullanıcı yok"}`}
             </p>
           </li>
         ))}
       </ul>
-      <button className="join-room-button" onClick={onJoinSelectedRoom} disabled={!pendingRoom || status !== "online" || pendingRoom === activeRoom}>
-        <AppIcon name="voice" />
-        <span>{isEnglish ? "Join selected room" : "Seçili odaya gir"}</span>
-      </button>
 
       <header className="panel-header friends">
         <h3>{isEnglish ? "Requests" : "İstekler"}</h3>

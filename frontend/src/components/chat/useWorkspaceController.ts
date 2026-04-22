@@ -66,6 +66,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
     const localAudioContextRef = useRef<AudioContext | null>(null)
     const localGainNodeRef = useRef<GainNode | null>(null)
     const [isJoiningVoice, setIsJoiningVoice] = useState(false)
+    const [joiningRoom, setJoiningRoom] = useState(false)
     const localStreamRef = useRef<MediaStream | null>(null)
     const screenStreamRef = useRef<MediaStream | null>(null)
     const peerConnectionsRef = useRef<Map<string, RTCPeerConnection>>(new Map())
@@ -139,7 +140,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         localAudioContextRef.current?.close().catch(() => undefined)
         localAudioContextRef.current = null
         localGainNodeRef.current = null
-        screenShareAudioSourceRef.current = null
+        detachScreenShareAudioFromMix()
         processedLocalStreamRef.current = null
 
         peerDisconnectTimeoutsRef.current.forEach((timerID) => window.clearTimeout(timerID))
@@ -301,15 +302,15 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         }, 2000)
     }
 
-    const classifyNetworkQuality = (latencyMs: number, fps: number, packetLossPct: number, bitrateKbps: number) => {
-
-        if (latencyMs <= 180 && fps >= 24 && packetLossPct < 2.5 && bitrateKbps >= 650) return "good"
-        if (latencyMs <= 380 && fps >= 8 && packetLossPct < 8) return "medium"
-        if (bitrateKbps >= 550 && packetLossPct < 5) return "medium"
+    const classifyNetworkQuality = (latencyMs: number, fps: number, packetLossPct: number, bitrateKbps: number): NetworkProfile => {
+        if (latencyMs <= 110 && fps >= 28 && packetLossPct < 1.3 && bitrateKbps >= 2_000) return "excellent"
+        if (latencyMs <= 180 && fps >= 26 && packetLossPct < 2.5 && bitrateKbps >= 1_300) return "good"
+        if (latencyMs <= 280 && fps >= 22 && packetLossPct < 4.5 && bitrateKbps >= 900) return "fair"
+        if (latencyMs <= 420 && fps >= 18 && packetLossPct < 7.5 && bitrateKbps >= 600) return "degraded"
         return "poor"
     }
 
-    const tunePeerSender = (peer: RTCPeerConnection, kind: "audio" | "video", profile: NetworkProfile = "medium") => {
+    const tunePeerSender = (peer: RTCPeerConnection, kind: "audio" | "video", profile: NetworkProfile = "fair") => {
         for (const sender of peer.getSenders()) {
             if (sender.track?.kind !== kind) continue
             const parameters = sender.getParameters()
@@ -320,9 +321,15 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 parameters.encodings[0].maxFramerate = videoProfile.maxFramerate
                 parameters.encodings[0].scaleResolutionDownBy = videoProfile.scaleResolutionDownBy
                 parameters.degradationPreference = videoProfile.degradationPreference
-                parameters.encodings[0].priority = profile === "poor" ? "low" : "medium"
+                parameters.encodings[0].priority = profile === "poor" || profile === "degraded" ? "low" : "medium"
             } else {
-                parameters.encodings[0].maxBitrate = profile === "poor" ? 96_000 : profile === "good" ? 160_000 : 128_000
+                parameters.encodings[0].maxBitrate = profile === "poor"
+                    ? 96_000
+                    : profile === "degraded"
+                        ? 112_000
+                        : profile === "fair"
+                            ? 128_000
+                            : 160_000
                 parameters.encodings[0].priority = "high"
             }
             void sender.setParameters(parameters).catch(() => undefined)
@@ -516,10 +523,10 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
 
         const localStream = await ensureOutgoingAudioStream()
         localStream.getTracks().forEach((track) => peer.addTrack(track, localStream))
-        tunePeerSender(peer, "audio", "medium")
+        tunePeerSender(peer, "audio", "fair")
         if (screenStreamRef.current) {
             screenStreamRef.current.getTracks().forEach((track) => peer.addTrack(track, screenStreamRef.current as MediaStream))
-            tunePeerSender(peer, "video", "medium")
+            tunePeerSender(peer, "video", "excellent")
         }
 
         peer.onicecandidate = (event) => {
@@ -843,9 +850,11 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                         const encodeMs = Number(payload.avg_encode_time_ms ?? 0)
                         const freezeCount = Number(payload.freeze_count ?? 0)
                         const totalFreezesDurationMs = Number(payload.total_freezes_duration_ms ?? 0)
-                        const networkStatus = payload.network_status === "good" || payload.network_status === "medium" || payload.network_status === "poor"
+                        const networkStatus = payload.network_status === "excellent" || payload.network_status === "good" || payload.network_status === "fair" || payload.network_status === "degraded" || payload.network_status === "poor"
                             ? payload.network_status
-                            : classifyNetworkQuality(latencyMs, fps, packetLossPct, bitrateKbps)
+                            : payload.network_status === "medium"
+                                ? "fair"
+                                : classifyNetworkQuality(latencyMs, fps, packetLossPct, bitrateKbps)
                         setStreamStatsByUser((prev) => ({
                             ...prev,
                             [payload.from as string]: {
@@ -1057,9 +1066,13 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         setUnreadCountByRoom((prev) => ({ ...prev, [roomName]: 0 }))
     }
 
-    const handleJoinSelectedRoom = () => {
-        if (!pendingRoom) return
-        if (activeRoom && activeRoom !== pendingRoom) {
+
+    const handleJoinSelectedRoom = (roomName?: string) => {
+        const roomToJoin = roomName ?? pendingRoom
+        if (!roomToJoin || joiningRoom) return
+        setJoiningRoom(true)
+        if (activeRoom && activeRoom !== roomToJoin) {
+
             sendRealtimeLeaveSignals(activeRoom)
             send({ type: "leave_room", room_id: activeRoom, timestamp: new Date().toISOString() })
             cleanupVoiceConnections()
@@ -1068,11 +1081,13 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             setSelectedScreenUser(null)
         }
         setActiveDirectFriend("")
-        setActiveRoom(pendingRoom)
-        if (!joinedRoomsRef.current.has(pendingRoom)) {
-            send({ type: "join_room", room_id: pendingRoom })
-            joinedRoomsRef.current.add(pendingRoom)
+        setPendingRoom(roomToJoin)
+        setActiveRoom(roomToJoin)
+        if (!joinedRoomsRef.current.has(roomToJoin)) {
+            send({ type: "join_room", room_id: roomToJoin })
+            joinedRoomsRef.current.add(roomToJoin)
         }
+        window.setTimeout(() => setJoiningRoom(false), 250)
     }
 
     const handleSelectDirectFriend = (friendUsername: string) => {
@@ -1168,6 +1183,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
                 })
         })
         screenStreamRef.current = null
+        detachScreenShareAudioFromMix()
         setLocalPreviewScreen(null)
         setScreenSharing(false)
         setCameraSharing(false)
@@ -1197,6 +1213,8 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
         screenStreamRef.current = stream
         if (mode === "screen") {
             await attachScreenShareAudioToMix(stream)
+        } else {
+            detachScreenShareAudioFromMix()
         }
         setLocalPreviewScreen({ username, stream })
         setScreenSharing(mode === "screen")
@@ -1206,7 +1224,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             if (remoteUser === username) continue
             const peer = await ensurePeerConnection(remoteUser, targetRoom)
             stream.getTracks().forEach((track) => peer.addTrack(track, stream))
-            tunePeerSender(peer, "video", "medium")
+            tunePeerSender(peer, "video", "excellent")
             await renegotiateWith(remoteUser, targetRoom)
         }
 
@@ -1429,6 +1447,7 @@ export const useWorkspaceController = ({ username, token, onLogout }: ChatWorksp
             streamStatsByUser,
             connectionDiagnosticsByUser,
             isJoiningVoice,
+            joiningRoom,
             remoteAudios,
             visibleMessages,
             activeRoomMeta,

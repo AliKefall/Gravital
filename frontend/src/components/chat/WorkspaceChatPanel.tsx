@@ -191,7 +191,7 @@ export const WorkspaceChatPanel = ({
   const connectionQuality = useMemo<"good" | "medium" | "poor" | "unknown">(() => {
     if (streamStatsRows.length === 0) return "unknown"
     if (streamStatsRows.some((row) => row.networkQuality === "poor")) return "poor"
-    if (streamStatsRows.some((row) => row.networkQuality === "medium")) return "medium"
+    if (streamStatsRows.some((row) => row.networkQuality === "degraded" || row.networkQuality === "fair")) return "medium"
     return "good"
   }, [streamStatsRows])
 
