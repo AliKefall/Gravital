@@ -799,7 +799,7 @@ button:disabled {
   background: #000;
 }
 
-.image-preview-content > a {
+.image-preview-content>a {
   justify-self: end;
   color: #f3e9dd;
 }
@@ -966,13 +966,15 @@ button:disabled {
 }
 
 :root[data-theme="dark"] .composer input {
-  background: #ffffff !important;
-  color: #111111 !important;
-  border-color: rgba(17, 17, 17, 0.28) !important;
+
+  background: rgba(30, 26, 22, 0.95) !important;
+  color: #f7f3ec !important;
+  border-color: rgba(255, 255, 255, 0.26) !important;
 }
 
 :root[data-theme="dark"] .composer input::placeholder {
-  color: #111111 !important;
+  color: rgba(247, 243, 236, 0.66) !important;
+
   opacity: 0.72;
 }
 
