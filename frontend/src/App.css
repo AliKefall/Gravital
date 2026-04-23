@@ -940,6 +940,17 @@ button:disabled {
   color: #4a3527;
 }
 
+.composer input {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: rgba(17, 17, 17, 0.28) !important;
+}
+
+.composer input::placeholder {
+  color: #111111 !important;
+  opacity: 0.72;
+}
+
 :root[data-theme="dark"] .message-toolbar input,
 :root[data-theme="dark"] .composer input,
 :root[data-theme="dark"] .sidebar-action-card input,
@@ -952,6 +963,17 @@ button:disabled {
 :root[data-theme="dark"] .message-toolbar input::placeholder,
 :root[data-theme="dark"] .composer input::placeholder {
   color: rgba(247, 243, 236, 0.66);
+}
+
+:root[data-theme="dark"] .composer input {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border-color: rgba(17, 17, 17, 0.28) !important;
+}
+
+:root[data-theme="dark"] .composer input::placeholder {
+  color: #111111 !important;
+  opacity: 0.72;
 }
 
 .ui-icon {
