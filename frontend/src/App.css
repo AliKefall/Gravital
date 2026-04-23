@@ -941,7 +941,7 @@ button:disabled {
 }
 
 .composer input {
-  background: #ffffff !important;
+  background: #ffffff;
   color: #111111 !important;
   border-color: rgba(17, 17, 17, 0.28) !important;
 }
