@@ -941,14 +941,14 @@ button:disabled {
 }
 
 .composer input {
-  background: #ffffff;
-  color: #111111 !important;
-  border-color: rgba(17, 17, 17, 0.28) !important;
+  background: var(--bg-soft);
+  color: var(--text-main) !important;
+  border-color: var(--border-main) !important;
 }
 
 .composer input::placeholder {
-  color: #111111 !important;
-  opacity: 0.72;
+  color: color-mix(in srgb, var(--text-main) 68%, transparent) !important;
+  opacity: 0.9;
 }
 
 :root[data-theme="dark"] .message-toolbar input,
@@ -965,18 +965,6 @@ button:disabled {
   color: rgba(247, 243, 236, 0.66);
 }
 
-:root[data-theme="dark"] .composer input {
-
-  background: rgba(30, 26, 22, 0.95) !important;
-  color: #f7f3ec !important;
-  border-color: rgba(255, 255, 255, 0.26) !important;
-}
-
-:root[data-theme="dark"] .composer input::placeholder {
-  color: rgba(247, 243, 236, 0.66) !important;
-
-  opacity: 0.72;
-}
 
 .ui-icon {
   width: 1rem;
@@ -1181,7 +1169,9 @@ body {
 .screen-share-area,
 .audio-settings-panel,
 .room-list,
-.friend-list {
+.friend-list,
+.message-toolbar,
+.composer {
   background: var(--bg-panel) !important;
   border-color: var(--border-main) !important;
 }
@@ -1260,7 +1250,7 @@ body {
 .forgot-page label,
 .forgot-page small,
 .forgot-page .error {
-  color: #000 !important;
+  color: var(--text-main) !important;
 }
 
 .modern-audio-grid .audio-control-card {
