@@ -123,6 +123,10 @@ UPLOAD_DIR=/var/gravital/uploads
 | `JWT_SECRET` | JWT signing secret key |
 | `CORS_ALLOWED_ORIGINS` | Allowed CORS origins |
 | `UPLOAD_DIR` | File upload directory |
+| `GITHUB_CLIENT_ID` | GitHub OAuth app client ID (for callback endpoint) |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth app client secret (for callback endpoint) |
+| `GITHUB_OAUTH_REDIRECT_URL` | Optional frontend URL to redirect after successful GitHub OAuth |
+| `GITHUB_AUTH_URL` | GitHub authorize URL used by the login button |
  
 ## Words From the Creator
  

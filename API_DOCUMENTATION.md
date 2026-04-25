@@ -201,6 +201,21 @@ This document provides a practical summary of the HTTP and WebSocket API surface
 
 ---
 
+### `GET /auth/oauth/github/callback`
+**What does it do?** Handles GitHub OAuth callback by exchanging `code`, creating/finding a local user, issuing refresh cookie + access token, and optionally redirecting to `GITHUB_OAUTH_REDIRECT_URL`.
+
+**Query params:**
+- `code` (required)
+
+**Required backend env vars:**
+- `GITHUB_CLIENT_ID`
+- `GITHUB_CLIENT_SECRET`
+
+**Optional backend env vars:**
+- `GITHUB_OAUTH_REDIRECT_URL` (if set, callback redirects there on success)
+
+---
+
 ## 3) Friendship Endpoints *(JWT required)*
 
 ### `GET /auth/friends`
