@@ -84,16 +84,6 @@ func (app *Handler) LoginHandler(w http.ResponseWriter, r *http.Request) {
 		Expires:  expiresAt,
 	})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
-		HttpOnly: true,
-		Secure:   secureCookie,
-		SameSite: http.SameSiteStrictMode,
-		Path:     "/",
-		MaxAge:   15 * 60,
-	})
-
 	RespondWithJson(w, http.StatusOK, map[string]any{
 		"access_token": accessToken,
 		"user": map[string]string{

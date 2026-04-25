@@ -41,11 +41,6 @@ func extractAccessToken(r *http.Request) string {
 		token = ""
 	}
 	if token == "" {
-		if cookie, err := r.Cookie("access_token"); err == nil {
-			token = cookie.Value
-		}
-	}
-	if token == "" {
 		token = r.URL.Query().Get("token")
 	}
 	return token

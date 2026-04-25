@@ -11,11 +11,8 @@ import (
 	"github.com/AliKefall/Gravital/internal/auth"
 )
 
-//Well not gonna lie. This part is totally vibecoded. But works. Some f***in how?
-
-func TestExtractToken_PrefersBearerHeader(t *testing.T) {
+func TestExtractToken_UsesBearerHeader(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/auth/me", nil)
-	req.AddCookie(&http.Cookie{Name: "access_token", Value: "cookie-token"})
 	req.Header.Set("Authorization", "Bearer header-token")
 
 	token, ok := extractToken(req)
@@ -27,23 +24,20 @@ func TestExtractToken_PrefersBearerHeader(t *testing.T) {
 	}
 }
 
-func TestExtractToken_UsesCookieWhenHeaderMissing(t *testing.T) {
+func TestExtractToken_RejectsWhenHeaderMissing(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/auth/me", nil)
 	req.AddCookie(&http.Cookie{Name: "access_token", Value: "cookie-token"})
 
-	token, ok := extractToken(req)
-	if !ok {
-		t.Fatal("expected token to be extracted from cookie")
-	}
-	if token != "cookie-token" {
-		t.Fatalf("token = %q, want %q", token, "cookie-token")
+	if token, ok := extractToken(req); ok || token != "" {
+		t.Fatalf("expected extraction to fail without bearer header, got token=%q ok=%v", token, ok)
 	}
 }
+
 func TestExtractionToken_InvalidAuthorizationHeader(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/auth/me", nil)
 	req.Header.Set("Authorization", "Token header-token")
 	if token, ok := extractToken(req); ok || token != "" {
-		t.Fatalf("expected invalid header to failed extraction, got token %q, ok=%v", token, ok)
+		t.Fatalf("expected invalid header to fail extraction, got token %q, ok=%v", token, ok)
 	}
 }
 

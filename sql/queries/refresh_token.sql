@@ -31,3 +31,9 @@ WHERE user_id = ?;
 DELETE FROM refresh_tokens
 WHERE user_id = ?
   AND (revoked_at IS NOT NULL OR expires_at <= ?);
+
+-- name: GetRefreshTokenByHash :one
+SELECT *
+FROM refresh_tokens
+WHERE token_hash = ?
+LIMIT 1;

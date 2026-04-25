@@ -49,13 +49,6 @@ func extractToken(r *http.Request) (string, bool) {
 		}
 		return token, true
 	}
-	if cookie, err := r.Cookie("access_token"); err == nil {
-		token := strings.TrimSpace(cookie.Value)
-		if token != "" {
-			return token, true
-		}
-
-	}
 	return "", false
 }
 

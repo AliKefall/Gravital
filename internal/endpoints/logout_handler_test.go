@@ -19,23 +19,19 @@ func TestHandlerLogout_WithoutRefreshCookie(t *testing.T) {
 	}
 
 	cookies := rr.Result().Cookies()
-	if len(cookies) < 2 {
-		t.Fatalf("expected at least two cookies to be set, got %d", len(cookies))
+	if len(cookies) == 0 {
+		t.Fatalf("expected refresh cookie to be set, got %d", len(cookies))
 	}
 
-	var refreshCleared, accessCleared bool
+	var refreshCleared bool
 	for _, c := range cookies {
 		if c.Name == "refresh_token" && c.MaxAge == -1 {
 			refreshCleared = true
 
 		}
-		if c.Name == "access_token" && c.MaxAge == -1 {
-			accessCleared = true
-		}
-
 	}
-	if !refreshCleared || !accessCleared {
-		t.Fatalf("expected both auth cookies to be cleared; refresh = %v, access = %v", refreshCleared, accessCleared)
+	if !refreshCleared {
+		t.Fatalf("expected refresh token cookie to be cleared")
 	}
 
 	body := rr.Body.String()

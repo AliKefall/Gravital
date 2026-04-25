@@ -37,26 +37,7 @@ func (h *Handler) HandlerLogout(w http.ResponseWriter, r *http.Request) {
 		}
 
 	}
-	secureCookie := shouldUseSecureCookie(r)
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   secureCookie,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   -1,
-	})
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    "",
-		Path:     "/",
-		HttpOnly: true,
-		Secure:   secureCookie,
-		SameSite: http.SameSiteStrictMode,
-		MaxAge:   -1,
-	})
+	clearRefreshTokenCookie(w, r)
 	// I will change the payload with any and add much more specified messages. But for now this one does the job.
 	RespondWithJson(w, http.StatusOK, map[string]string{
 		"message": "logged out",
