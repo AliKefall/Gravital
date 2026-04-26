@@ -39,13 +39,17 @@ export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: Log
   const [serverError, setServerError] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [socialProviders, setSocialProviders] = useState<SocialProvidersResponse>({})
+  const [isLoadingProviders, setIsLoadingProviders] = useState(true)
   const isEnglish = language === "en"
   const githubAuthConfigured = Boolean(socialProviders.github)
 
   const isValid = useMemo(() => Object.keys(validate(formData)).length === 0, [formData])
 
   useEffect(() => {
-    fetchSocialProviders().then(setSocialProviders).catch(() => undefined)
+    fetchSocialProviders()
+      .then(setSocialProviders)
+      .catch(() => undefined)
+      .finally(() => setIsLoadingProviders(false))
   }, [])
 
   const onSubmit = async (event: ChangeEvent<HTMLFormElement>) => {
@@ -115,22 +119,24 @@ export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: Log
         <button
           type="button"
           className="secondary"
-          disabled={!githubAuthConfigured}
+          disabled={!githubAuthConfigured || isLoadingProviders}
           onClick={() => {
             if (socialProviders.github) {
               window.location.href = socialProviders.github
             }
           }}
         >
-          {isEnglish ? "Continue with GitHub" : "GitHub ile devam et"}
+          {isLoadingProviders
+            ? (isEnglish ? "Loading GitHub..." : "GitHub yükleniyor...")
+            : (isEnglish ? "Continue with GitHub" : "GitHub ile devam et")}
         </button>
       </div>
 
       {!githubAuthConfigured ? (
         <small>
           {isEnglish
-            ? "GitHub login button is enabled after GITHUB_AUTH_URL is configured on backend."
-            : "GitHub giriş butonu, backend üzerinde GITHUB_AUTH_URL tanımlanınca aktif olur."}
+            ? "GitHub login is disabled. Configure GITHUB_CALLBACK_URL in backend and set the same callback URL in your GitHub OAuth App settings."
+            : "GitHub girişi pasif. Backend'de GITHUB_CALLBACK_URL ayarlayın ve aynı callback URL'yi GitHub OAuth App ayarlarına ekleyin."}
         </small>
       ) : null}
 

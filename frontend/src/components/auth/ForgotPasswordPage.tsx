@@ -12,22 +12,40 @@ export const ForgotPasswordPage = ({ onBack, language }: ForgotPasswordPageProps
   const [newPassword, setNewPassword] = useState("")
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isSendingCode, setIsSendingCode] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
 
   const isEnglish = language === "en"
 
   const handleForgotPasswordRequest = async () => {
+    if (!forgotEmail.trim()) {
+      setError(isEnglish ? "Please enter your email address first." : "Önce e-posta adresinizi girin.")
+      return
+    }
+
     try {
+      setIsSendingCode(true)
       setError(null)
+      setMessage(null)
       const response = await requestPasswordReset({ email: forgotEmail.trim().toLowerCase() })
       setMessage(`${response.message} ${isEnglish ? "Code expires in 10 minutes." : "Kod 10 dakika içinde geçersiz olur."}`)
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : isEnglish ? "Could not request reset code" : "Kod talebi başarısız")
+    } finally {
+      setIsSendingCode(false)
     }
   }
 
   const handlePasswordReset = async () => {
+    if (!forgotEmail.trim() || !resetCode.trim() || !newPassword.trim()) {
+      setError(isEnglish ? "Email, code and new password are required." : "E-posta, kod ve yeni şifre zorunludur.")
+      return
+    }
+
     try {
+      setIsResetting(true)
       setError(null)
+      setMessage(null)
       const response = await resetPasswordWithCode({
         email: forgotEmail.trim().toLowerCase(),
         code: resetCode.trim(),
@@ -36,21 +54,27 @@ export const ForgotPasswordPage = ({ onBack, language }: ForgotPasswordPageProps
       setMessage(response.message)
     } catch (resetError) {
       setError(resetError instanceof Error ? resetError.message : isEnglish ? "Password reset failed" : "Şifre sıfırlama başarısız")
+    } finally {
+      setIsResetting(false)
     }
   }
 
   return (
     <section className="forgot-page">
       <h2>{isEnglish ? "Forgot Password" : "Şifremi Unuttum"}</h2>
-      <p className="subtitle">{isEnglish ? "Reset your password on this dedicated page." : "Şifrenizi bu özel sayfadan sıfırlayın."}</p>
+      <p className="subtitle">
+        {isEnglish
+          ? "Step 1: Enter your email and get a 6-digit code. Step 2: Enter the code and your new password."
+          : "Adım 1: E-postanızı girip 6 haneli kod alın. Adım 2: Kodu ve yeni şifrenizi girin."}
+      </p>
 
       <label>
         {isEnglish ? "Email" : "E-posta"}
         <input value={forgotEmail} onChange={(event) => setForgotEmail(event.target.value)} placeholder="name@email.com" />
       </label>
 
-      <button type="button" className="secondary" onClick={() => void handleForgotPasswordRequest()}>
-        {isEnglish ? "Send Code" : "Kodu Gönder"}
+      <button type="button" className="secondary" onClick={() => void handleForgotPasswordRequest()} disabled={isSendingCode}>
+        {isSendingCode ? (isEnglish ? "Sending..." : "Gönderiliyor...") : (isEnglish ? "Send Code" : "Kodu Gönder")}
       </button>
 
       <label>
@@ -63,8 +87,8 @@ export const ForgotPasswordPage = ({ onBack, language }: ForgotPasswordPageProps
         <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
       </label>
 
-      <button type="button" onClick={() => void handlePasswordReset()}>
-        {isEnglish ? "Update Password" : "Şifreyi Güncelle"}
+      <button type="button" onClick={() => void handlePasswordReset()} disabled={isResetting}>
+        {isResetting ? (isEnglish ? "Updating..." : "Güncelleniyor...") : (isEnglish ? "Update Password" : "Şifreyi Güncelle")}
       </button>
 
       <button type="button" className="auth-link-button" onClick={onBack}>

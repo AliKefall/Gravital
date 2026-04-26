@@ -331,6 +331,29 @@ func (h *Handler) buildUniqueGitHubUsername(ctx context.Context, login string, g
 	return "", fmt.Errorf("could not generate unique username")
 }
 
+func resolveGitHubAuthURL(r *http.Request) string {
+	githubAuthURL := strings.TrimSpace(os.Getenv("GITHUB_AUTH_URL"))
+	if githubAuthURL != "" {
+		return githubAuthURL
+	}
+
+	if strings.TrimSpace(os.Getenv("GITHUB_CLIENT_ID")) == "" {
+		return ""
+	}
+
+	githubStartURL := strings.TrimSpace(os.Getenv("GITHUB_OAUTH_START_URL"))
+	if githubStartURL != "" {
+		return githubStartURL
+	}
+
+	return getRequestBaseURL(r) + "/auth/oauth/github/start"
+}
+
+func (h *Handler) OAuthOptionsHandler(w http.ResponseWriter, r *http.Request) {
+	RespondWithJson(w, http.StatusOK, map[string]string{
+		"github": resolveGitHubAuthURL(r),
+	})
+}
 func (h *Handler) issueSessionForUser(w http.ResponseWriter, r *http.Request, user db.User) (string, error) {
 	accessToken, err := h.App.JWT.Generate(user.ID, user.Username)
 	if err != nil {
@@ -371,3 +394,4 @@ func (h *Handler) issueSessionForUser(w http.ResponseWriter, r *http.Request, us
 
 	return accessToken, nil
 }
+
