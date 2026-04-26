@@ -189,12 +189,11 @@ This document provides a practical summary of the HTTP and WebSocket API surface
 ---
 
 ### `GET /auth/oauth/providers`
-**What does it do?** Returns OAuth provider URL information (Google/GitHub).
+**What does it do?** Returns OAuth provider URL information (GitHub).
 
 **Success response (`200`)**
 ```json
 {
-  "google": "https://...",
   "github": "https://..."
 }
 ```

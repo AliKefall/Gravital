@@ -45,6 +45,5 @@ export type ResetPasswordRequest = {
 }
 
 export type SocialProvidersResponse = {
-  google?: string
   github?: string
 }

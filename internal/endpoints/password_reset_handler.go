@@ -139,7 +139,6 @@ func (h *Handler) VerifyPasswordResetHandler(w http.ResponseWriter, r *http.Requ
 
 func (h *Handler) OAuthOptionsHandler(w http.ResponseWriter, _ *http.Request) {
 	RespondWithJson(w, http.StatusOK, map[string]string{
-		"google": strings.TrimSpace(os.Getenv("GOOGLE_AUTH_URL")),
 		"github": strings.TrimSpace(os.Getenv("GITHUB_AUTH_URL")),
 	})
 }

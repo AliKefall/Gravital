@@ -40,7 +40,6 @@ export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: Log
   const [showPassword, setShowPassword] = useState(false)
   const [socialProviders, setSocialProviders] = useState<SocialProvidersResponse>({})
   const isEnglish = language === "en"
-  const googleAuthConfigured = Boolean(socialProviders.google)
   const githubAuthConfigured = Boolean(socialProviders.github)
 
   const isValid = useMemo(() => Object.keys(validate(formData)).length === 0, [formData])
@@ -116,18 +115,6 @@ export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: Log
         <button
           type="button"
           className="secondary"
-          disabled={!googleAuthConfigured}
-          onClick={() => {
-            if (socialProviders.google) {
-              window.location.href = socialProviders.google
-            }
-          }}
-        >
-          {isEnglish ? "Continue with Google" : "Google ile devam et"}
-        </button>
-        <button
-          type="button"
-          className="secondary"
           disabled={!githubAuthConfigured}
           onClick={() => {
             if (socialProviders.github) {
@@ -139,11 +126,11 @@ export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: Log
         </button>
       </div>
 
-      {!googleAuthConfigured || !githubAuthConfigured ? (
+      {!githubAuthConfigured ? (
         <small>
           {isEnglish
-            ? "Google/GitHub login buttons are enabled after GOOGLE_AUTH_URL and GITHUB_AUTH_URL are configured on backend."
-            : "Google/GitHub giriş butonları, backend üzerinde GOOGLE_AUTH_URL ve GITHUB_AUTH_URL tanımlanınca aktif olur."}
+            ? "GitHub login button is enabled after GITHUB_AUTH_URL is configured on backend."
+            : "GitHub giriş butonu, backend üzerinde GITHUB_AUTH_URL tanımlanınca aktif olur."}
         </small>
       ) : null}
 
