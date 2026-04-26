@@ -108,7 +108,7 @@ func registerAuthRoutes(r chi.Router, deps *serverDependencies) {
 		r.Post("/reset-password", deps.handler.VerifyPasswordResetHandler)
 		r.Get("/oauth/providers", deps.handler.OAuthOptionsHandler)
 		r.Get("/oauth/github/callback", deps.handler.GitHubOAuthCallbackHandler)
-
+		r.Get("/oauth/github/start", deps.handler.GitHubOAuthStartHandler)
 		r.Group(func(r chi.Router) {
 			r.Use(middlewares.JWTMiddleware(deps.application))
 			r.Get("/me", deps.handler.MeHandler)

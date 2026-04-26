@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -23,6 +24,49 @@ import (
 const githubAPIBaseURL = "https://api.github.com"
 
 var githubUsernameSanitizer = regexp.MustCompile(`[^a-zA-Z0-9_]`)
+
+func getRequestBaseURL(r *http.Request) string {
+	scheme := "http"
+	if shouldUseSecureCookie(r) {
+		scheme = "https"
+	}
+
+	return fmt.Sprintf("%s://%s", scheme, r.Host)
+}
+
+func buildGitHubAuthorizeURL(r *http.Request) (string, error) {
+	clientID := strings.TrimSpace(os.Getenv("GITHUB_CLIENT_ID"))
+	if clientID == "" {
+		return "", fmt.Errorf("missing GITHUB_CLIENT_ID")
+	}
+
+	callbackURL := strings.TrimSpace(os.Getenv("GITHUB_CALLBACK_URL"))
+	if callbackURL == "" {
+		callbackURL = getRequestBaseURL(r) + "/auth/oauth/github/callback"
+	}
+
+	u, err := url.Parse("https://github.com/login/oauth/authorize")
+	if err != nil {
+		return "", err
+	}
+
+	q := u.Query()
+	q.Set("client_id", clientID)
+	q.Set("redirect_uri", callbackURL)
+	q.Set("scope", "read:user user:email")
+	u.RawQuery = q.Encode()
+	return u.String(), nil
+}
+
+func (h *Handler) GitHubOAuthStartHandler(w http.ResponseWriter, r *http.Request) {
+	authorizeURL, err := buildGitHubAuthorizeURL(r)
+	if err != nil {
+		RespondWithError(w, http.StatusInternalServerError, "GitHub OAuth is not configured", err)
+		return
+	}
+
+	http.Redirect(w, r, authorizeURL, http.StatusTemporaryRedirect)
+}
 
 type githubTokenResponse struct {
 	AccessToken string `json:"access_token"`

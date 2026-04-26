@@ -137,9 +137,17 @@ func (h *Handler) VerifyPasswordResetHandler(w http.ResponseWriter, r *http.Requ
 	RespondWithJson(w, http.StatusOK, map[string]string{"message": "Password updated successfully."})
 }
 
-func (h *Handler) OAuthOptionsHandler(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) OAuthOptionsHandler(w http.ResponseWriter, r *http.Request) {
+	githubAuthURL := strings.TrimSpace(os.Getenv("GITHUB_AUTH_URL"))
+	if githubAuthURL == "" && strings.TrimSpace(os.Getenv("GITHUB_CLIENT_ID")) != "" {
+		githubAuthURL = strings.TrimSpace(os.Getenv("GITHUB_OAUTH_START_URL"))
+		if githubAuthURL == "" {
+			githubAuthURL = getRequestBaseURL(r) + "/auth/oauth/github/start"
+		}
+	}
 	RespondWithJson(w, http.StatusOK, map[string]string{
-		"github": strings.TrimSpace(os.Getenv("GITHUB_AUTH_URL")),
+
+		"github": githubAuthURL,
 	})
 }
 
