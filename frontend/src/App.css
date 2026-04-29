@@ -106,8 +106,8 @@ select {
   border-radius: 9px;
   padding: 0.52rem 0.72rem;
   font-weight: 600;
-  color: #2c1f16;
-  background: #a77a56;
+  color: var(--button-text);
+  background: var(--button-bg);
   cursor: pointer;
   transition: transform 150ms ease, box-shadow 150ms ease, opacity 150ms ease;
 }
@@ -127,7 +127,7 @@ select {
 .inline-form button,
 .composer button,
 .upload-button {
-  background: linear-gradient(135deg, #a77a56, #8e6140);
+  background: var(--button-bg);
 }
 
 .auth-form {
@@ -283,7 +283,7 @@ button:disabled {
 }
 
 .room-item.active {
-  background: linear-gradient(135deg, #a77a56, #8e6140);
+  background: var(--button-bg);
   color: #171717;
 }
 
@@ -316,7 +316,7 @@ button:disabled {
   place-items: center;
   font-size: 0.68rem;
   font-weight: 700;
-  background: linear-gradient(135deg, #a77a56, #8e6140);
+  background: var(--button-bg);
   color: #161616;
 }
 
@@ -382,7 +382,7 @@ button:disabled {
 }
 
 .header-actions .active-tab {
-  background: linear-gradient(135deg, #a77a56, #8e6140);
+  background: var(--button-bg);
   color: #161616;
 }
 
@@ -1071,9 +1071,15 @@ button:disabled {
 
 
 .auth-link-button {
-  background: transparent !important;
-  border: 1px solid rgba(17, 17, 17, 0.2) !important;
-  color: #2c1f16 !important;
+  background: var(--button-secondary-bg) !important;
+  border: 1px solid var(--button-secondary-border) !important;
+  color: var(--button-text) !important;
+}
+
+.secondary {
+  background: var(--button-secondary-bg) !important;
+  border: 1px solid var(--button-secondary-border) !important;
+  color: var(--button-text) !important;
 }
 
 .social-auth-row {
@@ -1126,6 +1132,11 @@ button:disabled {
   --bg-soft: #f7efe4;
   --border-main: rgba(0, 0, 0, 0.18);
   --accent-main: #8e6140;
+  --button-text: #2c1f16;
+  --button-bg: linear-gradient(135deg, #a77a56, #8e6140);
+  --button-bg-hover: linear-gradient(135deg, #b58763, #9a6b45);
+  --button-secondary-bg: rgba(255, 255, 255, 0.6);
+  --button-secondary-border: rgba(17, 17, 17, 0.2);
 }
 
 :root[data-theme="dark"] {
@@ -1135,6 +1146,11 @@ button:disabled {
   --bg-soft: #3a3129;
   --border-main: rgba(255, 255, 255, 0.2);
   --accent-main: #b68761;
+  --button-text: #f7f3ec;
+  --button-bg: linear-gradient(135deg, #8a6347, #6f4f39);
+  --button-bg-hover: linear-gradient(135deg, #9a7153, #7a5941);
+  --button-secondary-bg: rgba(255, 255, 255, 0.08);
+  --button-secondary-border: rgba(255, 255, 255, 0.3);
 }
 
 body,
@@ -1287,4 +1303,23 @@ body {
 
 .audio-settings-panel.compact-audio {
   border-top: 1px solid var(--border-main);
+}
+
+
+.auth-guide,
+.auth-tip-box {
+  background: var(--bg-soft) !important;
+  border-color: var(--border-main) !important;
+}
+
+.auth-guide h3,
+.auth-guide li,
+.auth-tip-box {
+  color: var(--text-main) !important;
+}
+
+.auth-link-button:hover,
+.secondary:hover {
+  background: var(--button-bg-hover) !important;
+  color: var(--button-text) !important;
 }
