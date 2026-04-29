@@ -11,7 +11,6 @@ type LoginFormErrors = {
 interface LoginFormProps {
   onSuccess: (session: LoginResponse) => void
   language: "en" | "tr"
-  onForgotPasswordNavigate: () => void
 }
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -32,7 +31,7 @@ const validate = (data: LoginRequest): LoginFormErrors => {
   return errors
 }
 
-export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: LoginFormProps) => {
+export const LoginForm = ({ onSuccess, language }: LoginFormProps) => {
   const [formData, setFormData] = useState<LoginRequest>({ email: "", password: "" })
   const [errors, setErrors] = useState<LoginFormErrors>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -139,10 +138,6 @@ export const LoginForm = ({ onSuccess, language, onForgotPasswordNavigate }: Log
             : "GitHub girişi pasif. Backend'de GITHUB_CALLBACK_URL ayarlayın ve aynı callback URL'yi GitHub OAuth App ayarlarına ekleyin."}
         </small>
       ) : null}
-
-      <button type="button" className="auth-link-button" onClick={onForgotPasswordNavigate}>
-        {isEnglish ? "Forgot Password?" : "Şifremi unuttum"}
-      </button>
 
       {serverError ? <div className="alert error">{serverError}</div> : null}
     </form>

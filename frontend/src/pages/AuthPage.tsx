@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { LoginForm } from "../components/auth/LoginForm"
 import { RegisterForm } from "../components/auth/RegisterForm"
-import { ForgotPasswordPage } from "../components/auth/ForgotPasswordPage"
 import type { LoginResponse } from "../types/auth"
 
 interface AuthPageProps {
@@ -10,7 +9,7 @@ interface AuthPageProps {
 }
 
 export const AuthPage = ({ onLogin, language }: AuthPageProps) => {
-  const [activeTab, setActiveTab] = useState<"login" | "register" | "forgot">("login")
+  const [activeTab, setActiveTab] = useState<"login" | "register">("login")
   const isEnglish = language === "en"
 
   return (
@@ -29,23 +28,19 @@ export const AuthPage = ({ onLogin, language }: AuthPageProps) => {
           </ul>
         </section>
 
-        {activeTab !== "forgot" && (
-          <div className="tab-row">
-            <button className={activeTab === "login" ? "active" : ""} onClick={() => setActiveTab("login")}>
-              {isEnglish ? "Sign In" : "Giriş"}
-            </button>
-            <button className={activeTab === "register" ? "active" : ""} onClick={() => setActiveTab("register")}>
-              {isEnglish ? "Register" : "Kayıt Ol"}
-            </button>
-          </div>
-        )}
+        <div className="tab-row">
+          <button className={activeTab === "login" ? "active" : ""} onClick={() => setActiveTab("login")}>
+            {isEnglish ? "Sign In" : "Giriş"}
+          </button>
+          <button className={activeTab === "register" ? "active" : ""} onClick={() => setActiveTab("register")}>
+            {isEnglish ? "Register" : "Kayıt Ol"}
+          </button>
+        </div>
 
         {activeTab === "login" ? (
-          <LoginForm onSuccess={onLogin} language={language} onForgotPasswordNavigate={() => setActiveTab("forgot")} />
-        ) : activeTab === "register" ? (
-          <RegisterForm language={language} onSuccess={() => setActiveTab("login")} />
+          <LoginForm onSuccess={onLogin} language={language} />
         ) : (
-          <ForgotPasswordPage language={language} onBack={() => setActiveTab("login")} />
+          <RegisterForm language={language} onSuccess={() => setActiveTab("login")} />
         )}
       </section>
     </main>

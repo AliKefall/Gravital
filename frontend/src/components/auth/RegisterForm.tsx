@@ -108,7 +108,7 @@ export const RegisterForm = ({ onSuccess, language }: RegisterFormProps) => {
     try {
       const payload = normalizePayload(formData)
       const response = await registerUser(payload)
-      setSuccessMessage(`${labels.successPrefix}: ${response.username}.`)
+      setSuccessMessage(`${labels.successPrefix}: ${response.username}. ${isEnglish ? "Your recovery code" : "Kurtarma kodunuz"}: ${response.recovery_code}`)
       setFormData({
         email: "",
         username: "",

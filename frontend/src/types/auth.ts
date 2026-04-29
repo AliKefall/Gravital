@@ -8,6 +8,7 @@ export type RegisterResponse = {
   user_id: string
   username: string
   email: string
+  recovery_code: string
 }
 
 export type LoginRequest = {

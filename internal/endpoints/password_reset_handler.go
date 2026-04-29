@@ -161,3 +161,4 @@ func sendPasswordResetEmail(email, code string, expiresAt time.Time) {
 		log.Printf("could not send password reset email to %s: %v", email, err)
 	}
 }
+
