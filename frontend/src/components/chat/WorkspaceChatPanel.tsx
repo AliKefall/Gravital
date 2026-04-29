@@ -267,11 +267,11 @@ export const WorkspaceChatPanel = ({
 
       <div className="chat-kpi-row modern-kpi-row">
         <article className="kpi-card">
-          <span>Total messages</span>
+          <span>{isEnglish ? "Total messages" : "Toplam mesaj"}</span>
           <strong>{visibleMessages.length}</strong>
         </article>
         <article className="kpi-card">
-          <span>System notices</span>
+          <span>{isEnglish ? "System notices" : "Sistem bildirimi"}</span>
           <strong>{systemMessageCount}</strong>
         </article>
         <article className="kpi-card">
@@ -288,22 +288,22 @@ export const WorkspaceChatPanel = ({
         <section className="chat-tab-layout">
           <section className="screen-share-area">
             <header className="screen-share-header">
-              <h3>Screen Share Window</h3>
-              <p>{isCurrentUserSharingScreen ? "You are sharing your screen now." : "Screen share is off."}</p>
+              <h3>{isEnglish ? "Screen Share Window" : "Ekran Paylaşım Penceresi"}</h3>
+              <p>{isCurrentUserSharingScreen ? (isEnglish ? "You are sharing your screen now." : "Şu anda ekranınızı paylaşıyorsunuz.") : (isEnglish ? "Screen share is off." : "Ekran paylaşımı kapalı.")}</p>
             </header>
             <button className="secondary metrics-toggle" onClick={() => setShowLiveMetrics((prev) => !prev)}>
               <AppIcon name="search" />
-              <span>{showLiveMetrics ? "Hide live metrics" : "Show live metrics"}</span>
+              <span>{showLiveMetrics ? (isEnglish ? "Hide live metrics" : "Canlı metrikleri gizle") : (isEnglish ? "Show live metrics" : "Canlı metrikleri göster")}</span>
             </button>
             <div className="screen-share-stats">
-              <p><strong>Voice participants:</strong> {remoteAudios.length}</p>
-              <p><strong>Screen sharing:</strong> {activeRoomScreenSharers.length}</p>
-              <p><strong>Room owner:</strong> @{activeRoomMeta?.owner || "unknown"}</p>
+              <p><strong>{isEnglish ? "Voice participants:" : "Ses katılımcıları:"}</strong> {remoteAudios.length}</p>
+              <p><strong>{isEnglish ? "Screen sharing:" : "Ekran paylaşanlar:"}</strong> {activeRoomScreenSharers.length}</p>
+              <p><strong>{isEnglish ? "Room owner:" : "Oda sahibi:"}</strong> @{activeRoomMeta?.owner || "unknown"}</p>
             </div>
 
             <ul className="screen-share-users">
               {activeRoomScreenSharers.length === 0 ? (
-                <li>No one is sharing screen in this room right now.</li>
+                <li>{isEnglish ? "No one is sharing screen in this room right now." : "Bu odada şu anda kimse ekran paylaşmıyor."}</li>
               ) : (
                 activeRoomScreenSharers.map((member) => <li key={`screen-sharer-${member}`}>@{member}</li>)
               )}
@@ -313,7 +313,7 @@ export const WorkspaceChatPanel = ({
               {localPreviewScreen && (
                 <article className="screen-card">
                   <div className="screen-card-header">
-                    <h4>@{localPreviewScreen.username} (You)</h4>
+                    <h4>@{localPreviewScreen.username} ({isEnglish ? "You" : "Sen"})</h4>
                   </div>
                   <video
                     autoPlay
@@ -336,7 +336,7 @@ export const WorkspaceChatPanel = ({
                     <h4>@{remoteScreen.username}</h4>
                     <button className="secondary" onClick={() => onSelectedScreenUser(remoteScreen.username)}>
                       <AppIcon name="screen" />
-                      <span>Resize</span>
+                      <span>{isEnglish ? "Resize" : "Büyüt"}</span>
                     </button>
                   </div>
                   <video
@@ -361,16 +361,16 @@ export const WorkspaceChatPanel = ({
                     <h4>@{member}</h4>
                   </div>
                   <div className="stream-stats-inline">
-                    <span>Broadcast is active, stream is connecting...</span>
+                    <span>{isEnglish ? "Broadcast is active, stream is connecting..." : "Yayın aktif, akış bağlanıyor..."}</span>
                   </div>
                 </article>
               ))}
             </div>
             {showLiveMetrics && <section className="stream-metrics-panel">
-              <h4>Connection route monitor (UDP/TURN/P2P)</h4>
-              <p>Track active ICE route, protocol (UDP/TCP/TLS), and relay state for each peer.</p>
+              <h4>{isEnglish ? "Connection route monitor (UDP/TURN/P2P)" : "Bağlantı rota monitörü (UDP/TURN/P2P)"}</h4>
+              <p>{isEnglish ? "Track active ICE route, protocol (UDP/TCP/TLS), and relay state for each peer." : "Her eş için aktif ICE rotasını, protokolü (UDP/TCP/TLS) ve relay durumunu izleyin."}</p>
               {Object.entries(connectionDiagnosticsByUser).length === 0 ? (
-                <p>No connection diagnostics yet. Join voice and wait to connect with another user.</p>
+                <p>{isEnglish ? "No connection diagnostics yet. Join voice and wait to connect with another user." : "Henüz bağlantı tanılaması yok. Sese katılın ve başka bir kullanıcıyla bağlanmayı bekleyin."}</p>
               ) : (
                 <div className="stream-metrics-table-wrap">
                   <table className="stream-metrics-table">
@@ -411,10 +411,10 @@ export const WorkspaceChatPanel = ({
               )}
             </section>}
             {showLiveMetrics && <section className="stream-metrics-panel">
-              <h4>Live streaming metrics</h4>
-              <p>Monitor latency and connection quality for webcam/screen streams.</p>
+              <h4>{isEnglish ? "Live streaming metrics" : "Canlı yayın metrikleri"}</h4>
+              <p>{isEnglish ? "Monitor latency and connection quality for webcam/screen streams." : "Webcam/ekran akışları için gecikme ve bağlantı kalitesini izleyin."}</p>
               {streamStatsRows.length === 0 ? (
-                <p>No stream metrics yet. Join voice and start webcam/screen sharing.</p>
+                <p>{isEnglish ? "No stream metrics yet. Join voice and start webcam/screen sharing." : "Henüz akış metriği yok. Sese katılın ve webcam/ekran paylaşımını başlatın."}</p>
               ) : (
                 <div className="stream-metrics-table-wrap">
                   <table className="stream-metrics-table">
@@ -483,7 +483,7 @@ export const WorkspaceChatPanel = ({
             {filteredMessages.map((message, index) => (
               <article className="message-item" key={`${message.type}-${message.timestamp ?? "na"}-${index}`}>
                 <strong>{message.from ?? "system"}</strong>
-                <MessageContent message={message} />
+                <MessageContent message={message} language={language} />
               </article>
             ))}
           </div>

@@ -20,6 +20,14 @@ export const AuthPage = ({ onLogin, language }: AuthPageProps) => {
           <h1>Gravital Chat</h1>
           <p>{isEnglish ? "Welcome to the room-based chat app." : "Oda tabanlı sohbet uygulamasına hoş geldiniz."}</p>
         </header>
+        <section className="auth-guide">
+          <h3>{isEnglish ? "What can you do here?" : "Burada neler yapabilirsiniz?"}</h3>
+          <ul>
+            <li>{isEnglish ? "Create rooms and invite friends instantly." : "Oda oluşturun ve arkadaşlarınızı anında davet edin."}</li>
+            <li>{isEnglish ? "Chat with text, images, videos, and files." : "Metin, görsel, video ve dosya ile sohbet edin."}</li>
+            <li>{isEnglish ? "Join voice, share screen/camera, and track live metrics." : "Sese katılın, ekran/kamera paylaşın ve canlı metrikleri izleyin."}</li>
+          </ul>
+        </section>
 
         {activeTab !== "forgot" && (
           <div className="tab-row">

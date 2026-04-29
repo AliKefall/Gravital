@@ -67,6 +67,11 @@ export const ForgotPasswordPage = ({ onBack, language }: ForgotPasswordPageProps
           ? "Step 1: Enter your email and get a 6-digit code. Step 2: Enter the code and your new password."
           : "Adım 1: E-postanızı girip 6 haneli kod alın. Adım 2: Kodu ve yeni şifrenizi girin."}
       </p>
+      <div className="auth-tip-box">
+        {isEnglish
+          ? "Tip: request a code first, then set your new password. Theme and language preferences stay the same."
+          : "İpucu: önce kod isteyin, sonra yeni şifrenizi belirleyin. Tema ve dil tercihleriniz korunur."}
+      </div>
 
       <label>
         {isEnglish ? "Email" : "E-posta"}

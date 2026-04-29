@@ -5,10 +5,12 @@ import type { ChatMessage } from "./types"
 
 interface MessageContentProps {
   message: ChatMessage
+  language: "en" | "tr"
 }
 
-export const MessageContent = ({ message }: MessageContentProps) => {
+export const MessageContent = ({ message, language }: MessageContentProps) => {
   const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false)
+  const isEnglish = language === "en"
   const kind = message.kind
 
   if (kind === "image" && message.media_url) {
@@ -20,16 +22,16 @@ export const MessageContent = ({ message }: MessageContentProps) => {
             type="button"
             className="message-image-trigger"
             onClick={() => setIsImagePreviewOpen(true)}
-            title="Open image preview"
+            title={isEnglish ? "Open image preview" : "Görsel önizlemeyi aç"}
           >
             <img src={source} alt={message.file_name ?? "image"} />
           </button>
           <div className="message-media-actions">
             <button type="button" onClick={() => setIsImagePreviewOpen(true)}>
-              Büyüt
+              {isEnglish ? "Zoom" : "Büyüt"}
             </button>
             <a href={source} download={message.file_name ?? true} target="_blank" rel="noreferrer">
-              İndir
+              {isEnglish ? "Download" : "İndir"}
             </a>
           </div>
           {message.file_name && <figcaption>{message.file_name}</figcaption>}
@@ -40,19 +42,19 @@ export const MessageContent = ({ message }: MessageContentProps) => {
             className="image-preview-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Image preview"
+            aria-label={isEnglish ? "Image preview" : "Görsel önizleme"}
             onClick={() => setIsImagePreviewOpen(false)}
           >
             <div className="image-preview-content" onClick={(event) => event.stopPropagation()}>
               <header>
-                <strong>{message.file_name ?? "Image preview"}</strong>
+                <strong>{message.file_name ?? (isEnglish ? "Image preview" : "Görsel önizleme")}</strong>
                 <button type="button" onClick={() => setIsImagePreviewOpen(false)}>
-                  Kapat
+                  {isEnglish ? "Close" : "Kapat"}
                 </button>
               </header>
               <img src={source} alt={message.file_name ?? "image"} />
               <a href={source} download={message.file_name ?? true} target="_blank" rel="noreferrer">
-                İndir
+                {isEnglish ? "Download" : "İndir"}
               </a>
             </div>
           </div>
@@ -67,7 +69,7 @@ export const MessageContent = ({ message }: MessageContentProps) => {
       <figure className="message-media">
         <video controls preload="metadata">
           <source src={source} type={message.mime_type ?? "video/mp4"} />
-          Your browser does not support video playback.
+          {isEnglish ? "Your browser does not support video playback." : "Tarayıcınız video oynatmayı desteklemiyor."}
         </video>
         {message.file_name && <figcaption>{message.file_name}</figcaption>}
       </figure>
@@ -92,7 +94,7 @@ export const MessageContent = ({ message }: MessageContentProps) => {
         <div className="message-file">
           <span>RAR</span>
           <a href={source} download target="_blank" rel="noreferrer">
-            {message.file_name || "RAR file"}
+            {message.file_name || (isEnglish ? "RAR file" : "RAR dosyası")}
           </a>
         </div>
       )
@@ -100,7 +102,7 @@ export const MessageContent = ({ message }: MessageContentProps) => {
 
     return (
       <a className="message-link" href={source} target="_blank" rel="noreferrer">
-        {message.file_name ?? message.content ?? "Download file"}
+        {message.file_name ?? message.content ?? (isEnglish ? "Download file" : "Dosyayı indir")}
       </a>
     )
   }
@@ -113,7 +115,7 @@ export const MessageContent = ({ message }: MessageContentProps) => {
       <div className="message-rich">
         <p>{text}</p>
         <a className="message-link" href={urls[0]} target="_blank" rel="noreferrer">
-          Open link
+          {isEnglish ? "Open link" : "Bağlantıyı aç"}
         </a>
       </div>
     )

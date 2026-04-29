@@ -57,7 +57,9 @@ function App() {
   }, [])
 
   const languageLabel = language === "en" ? "TR" : "ENG"
-  const themeLabel = theme === "light" ? "Dark" : "Light"
+  const themeLabel = language === "en"
+    ? (theme === "light" ? "Dark UI" : "Light UI")
+    : (theme === "light" ? "Koyu Arayüz" : "Açık Arayüz")
 
   if (hydrating) {
     return (
@@ -72,7 +74,7 @@ function App() {
 
   return (
     <>
-      <div className="app-float-controls" aria-label="Display and language controls">
+      <div className="app-float-controls" aria-label={language === "en" ? "Display and language controls" : "Görünüm ve dil kontrolleri"}>
         <button type="button" className="control-chip" onClick={() => setLanguage((prev) => (prev === "en" ? "tr" : "en"))}>
           {languageLabel}
         </button>

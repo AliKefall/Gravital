@@ -394,4 +394,3 @@ func (h *Handler) issueSessionForUser(w http.ResponseWriter, r *http.Request, us
 
 	return accessToken, nil
 }
-
