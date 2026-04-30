@@ -8,52 +8,53 @@ import (
 	"time"
 )
 
-type rateEntry struct {
-	count   int
-	resetAt time.Time
+type limiterEntry struct {
+	tokens   float64
+	lastSeen time.Time
 }
 
-type fixedWindowLimiter struct {
+type tokenBucketLimiter struct {
 	mu      sync.Mutex
-	entries map[string]*rateEntry
-	max     int
-	window  time.Duration
-	pruneAt time.Time
+	entries map[string]*limiterEntry
+	rate    float64
+	burst   float64
+	ttl     time.Duration
 }
 
-func newFixedWindowLimiter(max int, window time.Duration) *fixedWindowLimiter {
-	return &fixedWindowLimiter{
-		entries: make(map[string]*rateEntry),
-		max:     max,
-		window:  window,
+func newTokenBucketLimiter(max int, window time.Duration) *tokenBucketLimiter {
+	if max <= 0 {
+		max = 1
 	}
+	if window <= 0 {
+		window = time.Second
+	}
+	return &tokenBucketLimiter{entries: make(map[string]*limiterEntry), rate: float64(max) / window.Seconds(), burst: float64(max), ttl: window * 2}
 }
 
-func (l *fixedWindowLimiter) allow(key string, now time.Time) bool {
+func (l *tokenBucketLimiter) allow(key string, now time.Time) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-
-	if l.pruneAt.IsZero() || now.After(l.pruneAt) {
-		for entryKey, entry := range l.entries {
-			if now.After(entry.resetAt) {
-				delete(l.entries, entryKey)
-			}
+	for k, e := range l.entries {
+		if now.Sub(e.lastSeen) > l.ttl {
+			delete(l.entries, k)
 		}
-		l.pruneAt = now.Add(l.window)
 	}
-
 	entry, ok := l.entries[key]
-	if !ok || now.After(entry.resetAt) {
-		l.entries[key] = &rateEntry{count: 1, resetAt: now.Add(l.window)}
-		return true
+	if !ok {
+		entry = &limiterEntry{tokens: l.burst, lastSeen: now}
+		l.entries[key] = entry
 	}
-	if entry.count >= l.max {
+	elapsed := now.Sub(entry.lastSeen).Seconds()
+	entry.tokens += elapsed * l.rate
+	if entry.tokens > l.burst {
+		entry.tokens = l.burst
+	}
+	entry.lastSeen = now
+	if entry.tokens < 1 {
 		return false
 	}
-
-	entry.count++
+	entry.tokens -= 1
 	return true
-
 }
 
 func clientIP(r *http.Request) string {
@@ -73,7 +74,7 @@ func clientIP(r *http.Request) string {
 }
 
 func AuthRateLimit(max int, window time.Duration) func(http.Handler) http.Handler {
-	limiter := newFixedWindowLimiter(max, window)
+	limiter := newTokenBucketLimiter(max, window)
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			key := clientIP(r) + ":" + r.URL.Path

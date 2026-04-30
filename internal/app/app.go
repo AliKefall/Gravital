@@ -13,7 +13,6 @@ type App struct {
 	Hasher          *auth.PasswordHasher
 	JWT             *auth.JWTManager
 	Hub             *websocket.Hub
-	Metrics         *observability.Metrics
 	FriendListCache *cache.FriendListCache
 	Prometheus      *observability.PrometheusMetrics
 }

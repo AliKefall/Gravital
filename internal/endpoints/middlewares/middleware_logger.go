@@ -35,12 +35,11 @@ func (rw *responseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 
 // NOTE: Log messages can be expanded with you own choice of demand. Just don't log important data in the logger.
 // This middleware is unused atm this is only here if you want your own custom logger system.
-func LoggerWithMetrics(metrics *observability.Metrics, prom *observability.PrometheusMetrics) func(http.Handler) http.Handler {
+func LoggerWithMetrics(prom *observability.PrometheusMetrics) func(http.Handler) http.Handler {
 	logger := slog.Default()
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			start := time.Now()
-			metrics.BeginRequest()
 			prom.IncHTTPInFlight()
 
 			rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
@@ -48,7 +47,6 @@ func LoggerWithMetrics(metrics *observability.Metrics, prom *observability.Prome
 
 			duration := time.Since(start)
 			reqID, _ := r.Context().Value(requestIDKey).(string)
-			metrics.EndRequest(r.Method, r.URL.Path, rw.status, duration)
 			prom.ObserveHTTPRequest(r.Method, r.URL.Path, rw.status, duration)
 			prom.DecHTTPInFlight()
 			logger.Info("http_request",

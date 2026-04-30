@@ -25,7 +25,7 @@ func buildRouter(config *ServerConfig, deps *serverDependencies) chi.Router {
 		MaxAge:           300,
 	}))
 	r.Use(middlewares.RequestID)
-	r.Use(middlewares.LoggerWithMetrics(deps.application.Metrics, deps.application.Prometheus))
+	r.Use(middlewares.LoggerWithMetrics(deps.application.Prometheus))
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Recoverer)
 	r.Use(securityHeadersMiddleware)
