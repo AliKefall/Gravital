@@ -67,9 +67,6 @@ func (m *Metrics) Snapshot() Snapshot {
 	for code, count := range m.statusCounts {
 		statusCopy[fmt.Sprintf("%d", code)] = count
 	}
-	for code, count := range m.statusCounts {
-		statusCopy[fmt.Sprintf("%d", code)] = count
-	}
 	paths := make([]struct {
 		key   string
 		count uint64
