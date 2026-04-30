@@ -35,7 +35,6 @@ func bootstrapServer(config *ServerConfig) (*sql.DB, *serverDependencies) {
 		Hasher:          auth.NewPasswordHasher(),
 		JWT:             auth.NewJWTManager(config.JWTSecret, 15*time.Minute),
 		Hub:             hub,
-		Metrics:         observability.NewMetrics(),
 		Prometheus:      promMetrics,
 		FriendListCache: cache.NewFriendListCache(45 * time.Second),
 	}

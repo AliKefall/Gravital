@@ -23,7 +23,6 @@ func buildIntegrationRouter(t *testing.T) http.Handler {
 	application := &app.App{
 		JWT:             auth.NewJWTManager("integration-secret", 0),
 		Hub:             websocket.NewHub(),
-		Metrics:         observability.NewMetrics(),
 		Prometheus:      promMetrics,
 		FriendListCache: cache.NewFriendListCache(0),
 	}

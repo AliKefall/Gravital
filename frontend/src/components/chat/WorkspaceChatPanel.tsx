@@ -5,6 +5,18 @@ import type { ChatMessage, ConnectionDiagnostics, RemoteAudio, RemoteScreen, Roo
 import { AppIcon } from "../common/AppIcon"
 
 
+
+const COPY = {
+  en: {
+    noRoom: "No room selected",
+    status: { online: "Live", connecting: "Connecting", reconnecting: "Reconnecting", offline: "Offline" },
+  },
+  tr: {
+    noRoom: "Oda seçilmedi",
+    status: { online: "Canlı", connecting: "Bağlanıyor", reconnecting: "Yeniden bağlanıyor", offline: "Çevrimdışı" },
+  },
+} as const
+
 interface WorkspaceChatPanelProps {
   status: "connecting" | "online" | "reconnecting" | "offline"
   activeRoom: string
@@ -95,6 +107,7 @@ export const WorkspaceChatPanel = ({
   language,
 }: WorkspaceChatPanelProps) => {
   const isEnglish = language === "en"
+  const copy = COPY[language]
   const [activeTab, setActiveTab] = useState<"chat" | "audio">("chat")
   const [messageFilter, setMessageFilter] = useState("")
   const [audioInputs, setAudioInputs] = useState<MediaDeviceInfo[]>([])
@@ -207,8 +220,8 @@ export const WorkspaceChatPanel = ({
     <section className="chat-panel">
       <header className="chat-header compact-chat-header">
         <div>
-          <h1>{activeDirectFriend ? `#${activeDirectFriend}` : activeRoom ? `#${activeRoom}` : (isEnglish ? "No room selected" : "Oda seçilmedi")}</h1>
-          <p>{status === "online" ? (isEnglish ? "Live" : "Canlı") : status === "connecting" ? (isEnglish ? "Connecting" : "Bağlanıyor") : status === "reconnecting" ? (isEnglish ? "Reconnecting" : "Yeniden bağlanıyor") : (isEnglish ? "Offline" : "Çevrimdışı")}</p>
+          <h1>{activeDirectFriend ? `#${activeDirectFriend}` : activeRoom ? `#${activeRoom}` : copy.noRoom}</h1>
+          <p>{copy.status[status]}</p>
         </div>
 
         <div className="header-actions compact-actions">
